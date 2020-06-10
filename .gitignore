@@ -1,0 +1,11 @@
+.idea
+.coverage
+
+data/*
+!data/.gitkeep
+
+results/*
+!results/.gitkeep
+
+figures/*
+!figures/.gitkeep
