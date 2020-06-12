@@ -41,10 +41,7 @@ class DataCreator:
 
         if not self.rebuild:
             print('Loading from saved path')
-            weather_list = []
-            for weather_file in os.listdir(weather_folder):
-                weather_file_path = os.path.join(weather_folder, weather_file)
-                weather_list.append(weather_file_path)
+            weather_list = self.__get_file_paths(weather_folder)
 
             if len(weather_list) == 0:
                 raise ValueError('{} folder is empty'.format(weather_folder))
@@ -64,13 +61,25 @@ class DataCreator:
                                    freq=str(self.weather_freq) + 'H')
 
             weather_data = weather_transformer.transform_range(date_range=date_r,
-                                                               spatial_range=self.spatial_range)
+                                                               spatial_range=self.spatial_range,
+                                                               save_dir=weather_folder)
 
-            weather_data_path = os.path.join(weather_folder, 'weather_data.pkl')
-            with open(weather_data_path, 'wb') as f:
-                pkl.dump(weather_data, f)
+            weather_list = self.__get_file_paths(weather_folder)
 
+        return weather_list
 
-if __name__ == '__main__':
-    # /media/selim/data/dataset/ecmwf/atmosphere
-    pass
+    @staticmethod
+    def __get_file_paths(in_dir):
+        """
+        Gets all the file paths inside `in_dir`
+
+        :param str in_dir: folder name
+        :return: file paths
+        :rtype: list
+        """
+        file_list = []
+        for file_name in os.listdir(in_dir):
+            file_path = os.path.join(in_dir, file_name)
+            file_list.append(file_path)
+
+        return file_list

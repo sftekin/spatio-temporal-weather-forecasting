@@ -38,11 +38,12 @@ class WeatherTransformer:
                 raise IndexError('{} does not match with inside date'.format(file_))
             gc.collect()
 
-    def transform_range(self, date_range, spatial_range, save_file=None):
+    def transform_range(self, date_range, spatial_range, save_dir=None):
         """
 
         :param date_range: e.g pd.date_range(start='2019-01-01', end='2020-03-01', freq='3H')
-        :param spatial_range: e.g [[40, 43], [-96, -89]
+        :param list of list spatial_range: e.g [[40, 43], [-96, -89]
+        :param str save_dir:
         :return:
         """
         if date_range.freq.n != self.freq:
@@ -66,7 +67,7 @@ class WeatherTransformer:
         time_arr_list = []
         data_arr_list = []
         for count, file_name in enumerate(file_dates):
-            print(r'{:.2f}%'.format((count / len(file_dates)) * 100), flush=True, end='\r')
+            print('{:.2f}%'.format((count / len(file_dates)) * 100))
             file_path = os.path.join(self.file_dir, file_name)
             nc = netCDF4.Dataset(file_path, 'r')
 
@@ -74,12 +75,8 @@ class WeatherTransformer:
             time_arr_list.append(time_arr)
 
             data_arr = self._crop_spatial(data=nc, in_range=spatial_range)
-
-            # TODO: save data for each timestamp
-            if save_file:
-                pass
-
             data_arr_list.append(data_arr)
+
             # since files are big, garbage collect the unref. files
             gc.collect()
 
@@ -90,6 +87,13 @@ class WeatherTransformer:
         # temporal crop
         temporal_idx = self._crop_temporal(time_combined, date_range)
         data_cropped = data_combined[temporal_idx]
+
+        # save data for each timestamp
+        date_range = pd.Series(date_range)
+        date_str = date_range.apply(lambda x: x.strftime('%Y-%m-%d_%H'))
+        for i in range(len(data_cropped)):
+            file_name = os.path.join(save_dir, date_str[i] + '.npy')
+            np.save(file_name, data_cropped[i])
 
         return data_cropped
 
