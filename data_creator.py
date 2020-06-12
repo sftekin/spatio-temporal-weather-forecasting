@@ -60,9 +60,9 @@ class DataCreator:
                                    end=self.end_date,
                                    freq=str(self.weather_freq) + 'H')
 
-            weather_data = weather_transformer.transform_range(date_range=date_r,
-                                                               spatial_range=self.spatial_range,
-                                                               save_dir=weather_folder)
+            weather_transformer.transform_range(date_range=date_r,
+                                                spatial_range=self.spatial_range,
+                                                save_dir=weather_folder)
 
             weather_list = self.__get_file_paths(weather_folder)
 
