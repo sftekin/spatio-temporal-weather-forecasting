@@ -41,10 +41,12 @@ class DataCreator:
 
         if not self.rebuild:
             print('Loading from saved path')
-            weather_list = self.__get_file_paths(weather_folder)
+            path_list = self.__get_file_paths(weather_folder)
 
-            if len(weather_list) == 0:
+            if len(path_list) == 0:
                 raise ValueError('{} folder is empty'.format(weather_folder))
+
+            path_arr = self.__sort_files_by_date(paths=path_list)
 
         else:
             # create the weather_data folder
@@ -64,9 +66,10 @@ class DataCreator:
                                                 spatial_range=self.spatial_range,
                                                 save_dir=weather_folder)
 
-            weather_list = self.__get_file_paths(weather_folder)
+            path_list = self.__get_file_paths(weather_folder)
+            path_arr = self.__sort_files_by_date(paths=path_list)
 
-        return weather_list
+        return path_arr
 
     @staticmethod
     def __get_file_paths(in_dir):
@@ -83,3 +86,24 @@ class DataCreator:
             file_list.append(file_path)
 
         return file_list
+
+    def __sort_files_by_date(self, paths):
+        """
+        Sorts files by the dates and crops them temporally. Returns
+        paths as an array
+
+        :param list of str paths: weather data paths
+        :return: array of paths
+        :rtype: numpy.ndarray
+        """
+        dates = [os.path.basename(file).split('.')[0] for file in paths]
+        date_df = pd.DataFrame(list(zip(paths, dates)), columns=['paths', 'dates'])
+        date_df['dates'] = pd.to_datetime(date_df['dates'], format="%Y-%m-%d_%H")
+        date_df.sort_values(by='dates', inplace=True)
+
+        indices = (self.start_date <= date_df['dates']) & \
+                  (date_df['dates'] <= self.end_date)
+        date_df = date_df[indices]
+        out_path = date_df['paths'].values
+
+        return out_path
