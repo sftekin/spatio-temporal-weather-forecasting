@@ -9,3 +9,10 @@ data_params = {
     "rebuild": False
 }
 
+batch_params = {
+    "input_dim": list(range(5)),
+    "output_dim": 0,
+    "atm_dim": 0,
+    "window_len": 10,
+    "batch_size": 16
+}
