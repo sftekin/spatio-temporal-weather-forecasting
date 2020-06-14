@@ -20,3 +20,7 @@ batch_gen_params = {
     "test_ratio": 0.1,
     "val_ratio": 0.1
 }
+
+trainer_params = {
+
+}

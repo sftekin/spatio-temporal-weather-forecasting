@@ -38,8 +38,8 @@ class WeatherDataset:
             batch_data = batch_data[:, :, self.atm_dim]
 
             # create x and y
-            x = torch.tensor(batch_data[..., self.input_dim], dtype=torch.float32)
-            y = torch.tensor(batch_data[..., self.output_dim], dtype=torch.float32)
+            x = torch.from_numpy(batch_data[..., self.input_dim])
+            y = torch.from_numpy(batch_data[..., self.output_dim])
 
             yield x, y
 
@@ -73,7 +73,7 @@ class WeatherDataset:
 
     def __create_buffer(self, in_data):
         """
-        
+
 
         :param numpy.ndarray in_data:
         :return: batches as list

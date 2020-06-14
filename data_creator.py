@@ -20,7 +20,8 @@ class DataCreator:
         :param bool rebuild:
         """
         # Data paths
-        self.data_dir = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
+        self.data_dir = os.path.abspath(
+            os.path.dirname(os.path.abspath(__file__)))
         self.data_dir = os.path.join(self.data_dir, 'data')
         self.weather_raw_dir = weather_raw_dir
 
@@ -96,8 +97,10 @@ class DataCreator:
         :rtype: numpy.ndarray
         """
         dates = [os.path.basename(file).split('.')[0] for file in paths]
-        date_df = pd.DataFrame(list(zip(paths, dates)), columns=['paths', 'dates'])
-        date_df['dates'] = pd.to_datetime(date_df['dates'], format="%Y-%m-%d_%H")
+        date_df = pd.DataFrame(list(zip(paths, dates)),
+                               columns=['paths', 'dates'])
+        date_df['dates'] = pd.to_datetime(
+            date_df['dates'], format="%Y-%m-%d_%H")
         date_df.sort_values(by='dates', inplace=True)
 
         indices = (self.start_date <= date_df['dates']) & \
