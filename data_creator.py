@@ -1,6 +1,5 @@
 import os
 import pandas as pd
-import pickle as pkl
 
 from transformer.weather_transform import WeatherTransformer
 
@@ -12,7 +11,7 @@ class DataCreator:
         Creates weather data. Stores path of the each data file as list
         under `self.weather_data` attribute.
 
-        :param str weather_raw_dir:
+        :param str weather_raw_dir: path for raw data
         :param str start_date: e.g '2018-01-10'
         :param str end_date: e.g '2019-01-12'
         :param list of list spatial_range: e.g [[40, 43], [-96, -89]]

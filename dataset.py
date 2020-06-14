@@ -45,9 +45,19 @@ class WeatherDataset:
 
     def __configure_data(self, in_data):
         """
+        Divides times series data to batch size and trims data to be divisible by
+        `batch_size` * `window_len`. For example:
+        time series data: 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
+        batch size = 3
+        window length = 2
+        output series:
+             1   2   3   4  5  6
+             7   8   9  10 11 12
+            13  14  15  16 17 18
 
         :param numpy.ndarray in_data: input path array with the shape of (T,)
         :return: batched array with the shape of  (B, T')
+        :rtype: numpy.ndarray
         """
         t_dim = len(in_data)
 
@@ -63,9 +73,11 @@ class WeatherDataset:
 
     def __create_buffer(self, in_data):
         """
+        
 
         :param numpy.ndarray in_data:
-        :return:
+        :return: batches as list
+        :rtype: list of numpy.ndarray
         """
         total_frame = in_data.shape[1]
 

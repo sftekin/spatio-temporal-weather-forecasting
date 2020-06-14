@@ -1,4 +1,3 @@
-
 data_params = {
     "weather_raw_dir": '/media/selim/data/dataset/ecmwf/atmosphere',
     "start_date": '1994-01-01',
@@ -9,10 +8,15 @@ data_params = {
     "rebuild": False
 }
 
-batch_params = {
+dataset_params = {
     "input_dim": list(range(5)),
-    "output_dim": 0,
+    "output_dim": [0],
     "atm_dim": 0,
     "window_len": 10,
     "batch_size": 16
+}
+
+batch_gen_params = {
+    "test_ratio": 0.1,
+    "val_ratio": 0.1
 }
