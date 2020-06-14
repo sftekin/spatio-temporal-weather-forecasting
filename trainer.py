@@ -59,3 +59,13 @@ class Trainer:
 
         self.input_normalizer.fit(torch.cat(data_list))
         self.output_normalizer.fit(torch.cat(label_list))
+
+        optimizer = optim.Adam(model.parameters(),
+                               lr=self.learning_rate,
+                               weight_decay=self.l2_reg)
+
+        for epoch in range(self.num_epochs):
+            # train and validation loop
+            start_time = time.time()
+
+            epoch_time = time.time() - start_time
