@@ -6,7 +6,7 @@ from transformer.weather_transform import WeatherTransformer
 
 class DataCreator:
     def __init__(self, weather_raw_dir, start_date, end_date, spatial_range,
-                 weather_freq=3, check_files=False, rebuild=True):
+                 weather_freq=3, features=None, atm_dim=0, check_files=False, rebuild=True):
         """
         Creates weather data. Stores path of the each data file as list
         under `self.weather_data` attribute.
@@ -30,8 +30,12 @@ class DataCreator:
         self.end_date = end_date
         self.spatial_range = spatial_range
         self.weather_freq = weather_freq
-        self.check_files = check_files
         self.rebuild = rebuild
+
+        # weather transformer parameters
+        self.check_files = check_files
+        self.features = features
+        self.atm_dim = atm_dim
 
         # create the data
         self.weather_data = self.__create_data()
@@ -55,6 +59,8 @@ class DataCreator:
 
             print('Creating the weather data')
             weather_transformer = WeatherTransformer(file_dir=self.weather_raw_dir,
+                                                     features=self.features,
+                                                     atm_dim=self.atm_dim,
                                                      check=self.check_files)
 
             # create weather data

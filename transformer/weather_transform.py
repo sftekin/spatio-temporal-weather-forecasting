@@ -6,18 +6,19 @@ import pandas as pd
 
 
 class WeatherTransformer:
-    def __init__(self, file_dir, check=False):
+    def __init__(self, file_dir, features, atm_dim, check=False):
         self.file_dir = file_dir
-        self.features = ['d', 'cc', 'z', 'u', 'v']
+        self.features = features
+        self.atm_dim = atm_dim
         self.index_date = pd.to_datetime('1900-01-01')
-        self.freq = 3
+        self.freq = 1  # depends on the dataset
 
         self.dates = self._get_file_dates()
         if check:
             self._check_filename_date_matching()
 
     def _get_file_dates(self):
-        file_names = os.listdir(self.file_dir)
+        file_names = [name for name in os.listdir(self.file_dir) if os.path.splitext(name)[1] == '.nc']
         file_names = list(map(lambda x: x.split('.')[0].replace('_', '-') + '-01', file_names))
         file_dates = pd.to_datetime(file_names)
 
@@ -113,11 +114,12 @@ class WeatherTransformer:
         arr_list = []
         for key in self.features:
             subset_arr = data.variables[key][:, :, lat_inds, lon_inds]
+            subset_arr = subset_arr[:, self.atm_dim]
             arr_list.append(np.array(subset_arr))
 
         # combine all features to create arr with shape of
         # (T, L, M, N, D) where L is the levels
-        data_combined = np.stack(arr_list, axis=4)
+        data_combined = np.stack(arr_list, axis=-1)
 
         return data_combined
 
