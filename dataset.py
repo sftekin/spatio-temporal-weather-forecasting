@@ -73,7 +73,7 @@ class WeatherDataset:
 
     def __create_buffer(self, in_data):
         """
-
+        Creates the buffer of frames.
 
         :param numpy.ndarray in_data:
         :return: batches as list
@@ -91,7 +91,7 @@ class WeatherDataset:
     @staticmethod
     def __load_batch(batch):
         """
-
+        loads from the path and creates the batch.
 
         :param numpy.ndarray batch:
         :return:
