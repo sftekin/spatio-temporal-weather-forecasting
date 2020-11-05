@@ -18,25 +18,47 @@ class WeatherModel(nn.Module):
         self.decoder_params = decoder_params
         self.device = device
 
-        input_cnn = InputCNN(in_channels=num_series)
+        self.input_cnn = InputCNN(in_channels=num_series)
 
-        encoder = FConvLSTMCell(input_size=(self.height, self.width),
-                               input_dim=self.num_series,
-                               hidden_dim=self.encoder_params['hidden_dim'],
-                               kernel_size=self.encoder_params['kernel_size'],
-                               bias=self.encoder_params['bias'],
-                               peephole_con=self.encoder_params['peephole_con'],
-                               device=self.device)
+        self.encoder = FConvLSTMCell(input_size=(self.height, self.width),
+                                     input_dim=self.num_series,
+                                     hidden_dim=self.encoder_params['hidden_dim'],
+                                     flow_dim=self.encoder_params['flow_dim'],
+                                     kernel_size=self.encoder_params['kernel_size'],
+                                     bias=self.encoder_params['bias'],
+                                     device=self.device)
 
-        input_attn = Attention(input_dim=1024, hidden_dim=self.num_series, attn_dim=input_attn_dim)
+        self.input_attn = Attention(input_dim=1024, hidden_dim=self.num_series, attn_dim=input_attn_dim)
 
-        decoder = FConvLSTMCell(input_size=(self.height, self.width),
-                               input_dim=1,
-                               hidden_dim=self.decoder_params['hidden_dim'],
-                               kernel_size=self.decoder_params['kernel_size'],
-                               bias=self.decoder_params['bias'],
-                               peephole_con=self.decoder_params['peephole_con'],
-                               device=self.device)
+        self.decoder = FConvLSTMCell(input_size=(self.height, self.width),
+                                     input_dim=1,
+                                     hidden_dim=self.decoder_params['hidden_dim'],
+                                     flow_dim=self.decoder_params['flow_dim'],
+                                     kernel_size=self.decoder_params['kernel_size'],
+                                     bias=self.decoder_params['bias'],
+                                     device=self.device)
 
-        output_attn = Attention(input_dim=self.encoder_params['hidden_dim'])
+        self.output_attn = Attention(input_dim=self.encoder_params['hidden_dim'])
 
+    def forward(self, input_tensor, flow_tensor, hidden):
+        """
+
+        :param input_tensor: (b, t, d, m, n)
+        :type input_tensor:
+        :param flow_tensor: (b, t, d, m, n)
+        :type flow_tensor:
+        :param hidden_dim: [(b, d', m, n), (b, d', m, n)]
+        :type hidden_dim:
+        :return:
+        :rtype:
+        """
+        win_len = input_tensor.shape[1]
+
+        cnn_out = []
+        for t in range(win_len):
+            # dim(x_t) = (b, 1024, m', n')
+            x_t = self.input_cnn(input_tensor[:, t])
+            cnn_out.append(x_t)
+        cnn_out = torch.stack(cnn_out, dim=1)
+
+        self.input_attn()

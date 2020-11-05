@@ -24,11 +24,11 @@ class Attention(nn.Module):
         self.u = nn.Linear(input_dim, attn_dim)
         self.v = nn.Parameter(torch.rand(hidden_dim), requires_grad=True)
 
-    def forward(self, hidden, input_tensor):
+    def forward(self, input_tensor, hidden):
         """
 
         :param tuple of torch.tensor hidden: ((B, hidden, M, N), (B, hidden, M, N))
-        :param torch.tensor input_tensor: (B, input_dim)
+        :param torch.tensor input_tensor: (B, input_dim, m, n)
         :return:
         """
         hid_conv_out = self.conv(torch.cat((hidden[0], hidden[1]), dim=1))
