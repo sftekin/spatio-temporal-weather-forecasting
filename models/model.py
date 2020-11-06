@@ -18,7 +18,7 @@ class WeatherModel(nn.Module):
         self.decoder_params = decoder_params
         self.device = device
 
-        self.input_cnn = InputCNN(in_channels=num_series)
+        self.input_cnn = InputCNN(in_channels=window_length)
 
         self.encoder = FConvLSTMCell(input_size=(self.height, self.width),
                                      input_dim=self.num_series,
