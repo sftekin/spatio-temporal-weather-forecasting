@@ -26,18 +26,25 @@ class Attention(nn.Module):
         """
 
         :param tuple of torch.tensor hidden: ((B, hidden, M, N), (B, hidden, M, N))
-        :param torch.tensor input_tensor: (B, T, m, n)
+        :param torch.tensor input_tensor: (B, T, m, n, D)
         :return:
         """
         hid_conv_out = self.conv(torch.cat((hidden[0], hidden[1]), dim=1))
-        in_conv_out = self.in_conv(input_tensor)
 
-        # hidden_vec: (B, 1, M*N), in_vec: (B, 1, m*n)
+        # hidden_vec: (B, 1, M*N)
         hidden_vec = torch.flatten(hid_conv_out, start_dim=2)
-        in_vec = torch.flatten(in_conv_out, start_dim=2)
 
-        # u(in_vec): (1, attn_dim), w(in_vec): (1, attn_dim)
-        attn_energies = torch.sum(self.v * (self.w(hidden_vec) + self.u(in_vec)).tanh())
-        output = F.softmax(attn_energies, dim=0)
+        attn_energies = []
+        for i in range(input_tensor.shape[-1]):
+            # in_vec: (B, 1, m*n)
+            in_conv_out = self.in_conv(input_tensor[..., -1])
+            in_vec = torch.flatten(in_conv_out, start_dim=2)
+
+            # u(in_vec): (B, 1, attn_dim), w(in_vec): (B, 1, attn_dim), energy: (1)
+            energy = torch.sum(self.v * (self.w(hidden_vec) + self.u(in_vec)).tanh())
+            attn_energies.append(energy)
+
+        attn_energies = torch.cat(attn_energies, dim=1)
+        output = F.softmax(attn_energies, dim=1)
 
         return output
