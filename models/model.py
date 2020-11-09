@@ -45,7 +45,7 @@ class WeatherModel(nn.Module):
 
         self.output_attn = Attention(input_dim=self.encoder_params['hidden_dim'])
 
-    def forward(self, input_tensor, flow_tensor, hidden):
+    def forward(self, input_tensor, output_tensor, flow_tensor, hidden):
         """
 
         :param input_tensor: (b, t, d, m, n)
@@ -64,8 +64,8 @@ class WeatherModel(nn.Module):
             # dim(x_k): (b, 256, m', n')
             x_k = self.input_cnn(input_tensor[:, :, k])
 
-            # dim(alpha_values): (B, 1)
-            alpha = self.input_attn(x_k)
+            # dim(alpha): (B, 1)
+            alpha = self.input_attn(x_k, hidden)
             alpha_list.append(alpha)
 
         # dim(alpha_tensor): (B, D)
@@ -80,6 +80,32 @@ class WeatherModel(nn.Module):
 
             h, c = self.encoder(input_tensor=x_tilda, cur_state=hidden, flow_tensor=flow_tensor)
             en_out.append(h)
+        # # dim(en_out): (B, T, D, M, N)
+        # en_out = torch.stack(en_out, dim=1)
+
+        de_hidden = self.decoder.init_hidden(batch_size)
+        for t in range(self.win_length):
+
+            beta_list = []
+            for k in range(len(en_out)):
+                beta = self.output_attn(en_out[k], de_hidden)
+                beta_list.append(beta)
+
+            # dim(beta_tensor): (B, T)
+            beta_tensor = F.softmax(torch.cat(alpha_list, dim=1))
+
+            context_t = []
+            for k in range(len(en_out)):
+                en_dim = en_out[k].shape[2]
+                h_k = en_out[k].view(batch_size, en_dim, -1)
+                context_t.append(h_k * beta_tensor.unsqueeze(2))
+
+            context_t = torch.sum(torch.cat(context_t, 1), 1)
+            context_t = context_t.view(-1, )
+
+            de_in = torch.cat([context_t, output_tensor], )
+
+
 
 
 
