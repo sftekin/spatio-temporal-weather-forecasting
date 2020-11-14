@@ -24,6 +24,14 @@ batch_gen_params = {
     "batch_size": 32
 }
 
+trainer_params = {
+    "num_epochs": 50,
+    "learning_rate": 0.0001,
+    "l2_reg": True,
+    "clip": 5,
+    "device": 'cuda'
+}
+
 model_params = {
     "input_size": (61, 121),
     "window_in": 10,

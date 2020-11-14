@@ -5,51 +5,39 @@ import torch.optim as optim
 
 from copy import deepcopy
 from models.adaptive_normalizer import AdaptiveNormalizer
+from models.weather_model import WeatherModel
 
 
-class Trainer:
-    def __init__(self, model, criterion, optimizer, clip):
-        self.model = model
-        self.criterion = criterion
-        self.optimizer = optimizer
-        self.clip = clip
-        self.normalizer = AdaptiveNormalizer()
-
-    def step(self, input_tensor, output_tensor):
-        self.optimizer.zero_grad()
-        pred = self.model(input_tensor, output_tensor)
-        loss = self.criterion(output_tensor, pred)
-
-        if self.model.training:
-            loss.backward()
-            nn.utils.clip_grad_norm(self.model.paremeters(), self.clip)
-            self.optimizer.step()
-
-        return loss
-
-
-def train(model, batch_generator):
+def train(model, batch_generator, trainer_conf):
     """
 
     :param model:
     :param batch_generator:
+    :param trainer_conf:
     :return:
     """
-    train_loss = []
-    val_loss = []
+    device = torch.device(trainer_conf['device'])
 
-    tolerance = 0
-    best_epoch = 0
-    best_val_loss = 1e6
-    evaluation_val_loss = best_val_loss
-    best_dict = model.state_dict()
+    model = WeatherModel(**trainer_conf).to(device)
+    model.train()
 
     optimizer = optim.Adam(model.parameters(),
-                           lr=self.learning_rate,
-                           weight_decay=self.l2_reg)
+                           lr=trainer_conf['learning_rate'],
+                           weight_decay=trainer_conf['l2_reg'])
+    criterion = nn.MSELoss()
 
-    for epoch in range(self.num_epochs):
+    train_loss = []
+    val_loss = []
+    for epoch in range(trainer_conf['num_epochs']):
         # train and validation loop
         start_time = time.time()
+
+        running_loss = 0
+        for idx, (x, y) in enumerate(batch_generator.generate(dataset_name='train')):
+            print('\rtrain:{}/{}'.format(idx, batch_generator.num_iter), flush=True, end='')
+            x, y = x.to(device), y.to(device)
+
+            optimizer.zero_grad()
+
 
         epoch_time = time.time() - start_time

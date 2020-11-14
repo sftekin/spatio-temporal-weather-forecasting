@@ -21,6 +21,7 @@ class WeatherDataset:
         self.window_out_len = window_out_len
         self.total_window_len = window_in_len + window_out_len
         self.batch_size = batch_size
+        self.num_iter = 0
 
     def next(self):
         """
@@ -32,13 +33,16 @@ class WeatherDataset:
         :rtype: torch.tensor, torch.tensor
         """
         weather_data = self.__create_buffer(in_data=self.weather_data)
+        self.num_iter = len(weather_data)
 
-        for i in range(len(weather_data)):
+        for i in range(self.num_iter):
             batch_data = self.__load_batch(batch=weather_data[i])
 
             # create x and y
             x = torch.from_numpy(batch_data[:, :self.window_in_len, ..., self.input_dim])
             y = torch.from_numpy(batch_data[:, self.window_in_len:, ..., self.output_dim])
+
+            # create flow matrix
 
             yield x, y
 
@@ -65,6 +69,21 @@ class WeatherDataset:
                 j = 0
 
         return stacked_data
+
+    def create_flow(self, x):
+        batch_dim, seq_dim, height, width, d_dim = x.shape
+
+        for i in range(seq_dim):
+            f_t = x[:, i, 1:height - 1, 1:width - 1, self.output_dim]
+            if i >= self.flow_dim:
+                f_a = f_t - x[:, i-1, :height-2, :width-2, self.output_dim]
+                f_b = f_t - x[:, i-1, 2:height, 2:width, self.output_dim]
+                f_c = f_t - x[:, i-1, 2:height, :width-2, self.output_dim]
+                f_d = f_t - x[:, i-1, :height-2, 2:width, self.output_dim]
+                f = torch.stack([f_a, f_b, f_c, f_d], dim=-1)
+            else:
+                f = f_t
+
 
     @staticmethod
     def __load_batch(batch):
