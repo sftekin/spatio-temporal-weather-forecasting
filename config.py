@@ -21,11 +21,27 @@ batch_gen_params = {
     "output_dim": [10],
     "window_in_len": 10,
     "window_out_len": 5,
-    "batch_size": 16
+    "batch_size": 32
 }
 
-
-trainer_params = {
-    "global_start_date": '2000-01-01',
-    "global_end_date": '2008-12-31',
+model_params = {
+    "input_size": (61, 121),
+    "window_in": 10,
+    "window_out": 5,
+    "device": 'gpu',
+    "num_series": 14,
+    "input_attn_dim": 300,
+    "temporal_attn_dim": 300,
+    "encoder_params": {
+        "hidden_dim": 14,
+        "flow_dim": 2,
+        "kernel_size": 3,
+        "bias": False
+    },
+    "decoder_params": {
+        "hidden_dim": 28,
+        "flow_dim": 2,
+        "kernel_size": 3,
+        "bias": False
+    }
 }

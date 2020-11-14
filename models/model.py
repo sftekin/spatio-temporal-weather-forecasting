@@ -88,6 +88,7 @@ class WeatherModel(nn.Module):
             en_out.append(h)
 
         de_hidden = self.decoder.init_hidden(batch_size)
+        de_input = output_tensor
         de_out = []
 
         # parse decoder layer and get outputs recursively
@@ -109,9 +110,9 @@ class WeatherModel(nn.Module):
             context_t = torch.sum(torch.cat(context_t, 1), 1)
             context_t = context_t.view(batch_size, self.decoder.height, self.decoder.width)
 
-            de_in = torch.cat([context_t, output_tensor], dim=1)
-            h, c = self.decoder(de_in, de_hidden)
-            de_out.append(h)
+            de_in = torch.cat([context_t, de_input], dim=1)
+            de_input, c = self.decoder(de_in, de_input)
+            de_out.append(de_input)
 
         de_out = torch.stack(de_out, dim=1)
 

@@ -32,6 +32,8 @@ def run():
         for c, (x, y) in enumerate(batch_generator.generate(dataset_name='train')):
             print(c, x.shape, y.shape)
 
+        break
+
         # # remove dump directory
         # shutil.rmtree(dump_file_dir)
 

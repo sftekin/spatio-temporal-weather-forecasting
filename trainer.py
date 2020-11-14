@@ -17,7 +17,7 @@ class Trainer:
 
     def step(self, input_tensor, output_tensor):
         self.optimizer.zero_grad()
-        pred = self.model(input_tensor)
+        pred = self.model(input_tensor, output_tensor)
         loss = self.criterion(output_tensor, pred)
 
         if self.model.training:
