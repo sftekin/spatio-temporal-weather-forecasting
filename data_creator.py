@@ -12,8 +12,8 @@ class DataCreator:
         under `self.weather_data` attribute.
 
         :param str weather_raw_dir: path for raw data
-        :param str start_date: e.g '2018-01-10'
-        :param str end_date: e.g '2019-01-12'
+        :param start_date: e.g '2018-01-10'
+        :param end_date: e.g '2019-01-12'
         :param list of list spatial_range: e.g [[40, 43], [-96, -89]]
         :param int weather_freq:
         :param bool check_files:
@@ -37,11 +37,8 @@ class DataCreator:
         self.features = features
         self.atm_dim = atm_dim
 
-        # create the data
-        self.weather_data = self.__create_data()
-
-    def __create_data(self):
-        weather_folder = os.path.join(self.data_dir, 'weather_data')
+    def create_data(self):
+        weather_folder = os.path.join(self.data_dir, 'data_dump')
 
         if not self.rebuild:
             print('Loading from saved path')
@@ -61,7 +58,8 @@ class DataCreator:
             weather_transformer = WeatherTransformer(file_dir=self.weather_raw_dir,
                                                      features=self.features,
                                                      atm_dim=self.atm_dim,
-                                                     check=self.check_files)
+                                                     check=self.check_files,
+                                                     freq=self.weather_freq)
 
             # create weather data
             date_r = pd.date_range(start=self.start_date,

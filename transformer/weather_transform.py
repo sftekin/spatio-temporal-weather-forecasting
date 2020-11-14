@@ -6,12 +6,12 @@ import pandas as pd
 
 
 class WeatherTransformer:
-    def __init__(self, file_dir, features, atm_dim, check=False):
+    def __init__(self, file_dir, features, atm_dim, freq, check=False):
         self.file_dir = file_dir
         self.features = features
         self.atm_dim = atm_dim
         self.index_date = pd.to_datetime('1900-01-01')
-        self.freq = 1  # depends on the dataset
+        self.freq = freq
 
         self.dates = self._get_file_dates()
         if check:
@@ -47,9 +47,9 @@ class WeatherTransformer:
         :param str save_dir:
         :return:
         """
-        if date_range.freq.n != self.freq:
-            raise ValueError('Input date_range must have the '
-                             'same frequency with netCDF files')
+        # if date_range.freq.n != self.freq:
+        #     raise ValueError('Input date_range must have the '
+        #                      'same frequency with netCDF files')
 
         file_dates = []
         for day in date_range:
@@ -75,7 +75,19 @@ class WeatherTransformer:
             time_arr = np.array(nc['time'][:], dtype=np.int)
             time_arr_list.append(time_arr)
 
-            data_arr = self._crop_spatial(data=nc, in_range=spatial_range)
+            if spatial_range:
+                data_arr = self._crop_spatial(data=nc, in_range=spatial_range)
+            else:
+                arr_list = []
+                for key in self.features:
+                    subset_arr = nc.variables[key][:]
+                    subset_arr = subset_arr[:, self.atm_dim]
+
+                    split_arr = np.split(subset_arr, range(self.freq, len(subset_arr), self.freq), axis=0)
+                    time_avg_arr = np.sum(np.stack(split_arr, axis=0), axis=1)
+
+                    arr_list.append(np.array(time_avg_arr))
+                data_arr = np.stack(arr_list, axis=-1)
             data_arr_list.append(data_arr)
 
             # since files are big, garbage collect the unref. files
@@ -84,6 +96,7 @@ class WeatherTransformer:
         # combine all arrays on time dimension
         data_combined = np.concatenate(data_arr_list, axis=0)
         time_combined = np.concatenate(time_arr_list, axis=0)
+        time_combined = time_combined[range(0, len(time_combined), self.freq)]
 
         # temporal crop
         temporal_idx = self._crop_temporal(time_combined, date_range)
@@ -115,7 +128,11 @@ class WeatherTransformer:
         for key in self.features:
             subset_arr = data.variables[key][:, :, lat_inds, lon_inds]
             subset_arr = subset_arr[:, self.atm_dim]
-            arr_list.append(np.array(subset_arr))
+
+            split_arr = np.split(subset_arr, range(self.freq, len(subset_arr), self.freq), axis=0)
+            time_avg_arr = np.sum(np.stack(split_arr, axis=0), axis=1)
+
+            arr_list.append(np.array(time_avg_arr))
 
         # combine all features to create arr with shape of
         # (T, L, M, N, D) where L is the levels
