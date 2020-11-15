@@ -35,6 +35,7 @@ class WeatherDataset:
         weather_data = self.__create_buffer(in_data=self.weather_data)
         self.num_iter = len(weather_data)
 
+        prev_batch = None
         for i in range(self.num_iter):
             batch_data = self.__load_batch(batch=weather_data[i])
 
@@ -43,6 +44,10 @@ class WeatherDataset:
             y = torch.from_numpy(batch_data[:, self.window_in_len:, ..., self.output_dim])
 
             # create flow matrix
+            if prev_batch is None:
+                f_x, f_y = self.init_flow_mat(batch_data)
+            else:
+                f_x, f_y = self.create_flow_mat(x=batch_data, x_prev=prev_batch)
 
             yield x, y
 
@@ -70,7 +75,7 @@ class WeatherDataset:
 
         return stacked_data
 
-    def create_flow(self, x):
+    def create_flow_mat(self, x):
         batch_dim, seq_dim, height, width, d_dim = x.shape
 
         for i in range(seq_dim):
@@ -83,6 +88,15 @@ class WeatherDataset:
                 f = torch.stack([f_a, f_b, f_c, f_d], dim=-1)
             else:
                 f = f_t
+
+    def init_flow_mat(self, batch_data):
+        """
+        Take the mean of the
+
+        :return:
+        """
+        f_mean = np.mean(batch_data[..., self.output_dim], dim=-1)
+
 
 
     @staticmethod
