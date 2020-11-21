@@ -13,12 +13,12 @@ class AdaptiveNormalizer:
         :return: normalized tensor
         :rtype: torch.Tensor
         """
-        last_value = input_tensor[-1] + 1e-6
+        last_value = input_tensor[:, -1] + 1e-6
 
         if self.seasonality:
             pass
 
-        normalized = torch.log(input_tensor / last_value + 1e-6)
+        normalized = torch.log(input_tensor / (last_value + 1e-6))
         return normalized
 
     def inv_norm(self, input_tensor):

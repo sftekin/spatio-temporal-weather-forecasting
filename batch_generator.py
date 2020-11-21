@@ -30,6 +30,9 @@ class BatchGenerator:
 
         return hurricane_dataset
 
+    def num_iter(self, dataset_name):
+        return self.dataset_dict[dataset_name].num_iter
+
     def generate(self, dataset_name):
         selected_loader = self.dataset_dict[dataset_name]
         yield from selected_loader.next()

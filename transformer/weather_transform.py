@@ -84,7 +84,7 @@ class WeatherTransformer:
                     subset_arr = subset_arr[:, self.atm_dim]
 
                     split_arr = np.split(subset_arr, range(self.freq, len(subset_arr), self.freq), axis=0)
-                    time_avg_arr = np.sum(np.stack(split_arr, axis=0), axis=1)
+                    time_avg_arr = np.mean(np.stack(split_arr, axis=0), axis=1)
 
                     arr_list.append(np.array(time_avg_arr))
                 data_arr = np.stack(arr_list, axis=-1)

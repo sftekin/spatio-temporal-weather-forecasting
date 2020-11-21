@@ -30,7 +30,7 @@ class Attention(nn.Module):
         :param tuple of torch.tensor hidden: ((B, hidden, M, N), (B, hidden, M, N))
         :return: attention energies, (B, 1)
         """
-        hid_conv_out = self.conv(torch.cat((hidden[0], hidden[1]), dim=1))
+        hid_conv_out = self.hid_conv(torch.cat((hidden[0], hidden[1]), dim=1))
 
         # hidden_vec: (B, 1, M*N)
         hidden_vec = torch.flatten(hid_conv_out, start_dim=2)
@@ -40,6 +40,6 @@ class Attention(nn.Module):
         in_vec = torch.flatten(in_conv_out, start_dim=2)
 
         # u(in_vec): (B, 1, attn_dim), w(in_vec): (B, 1, attn_dim), energy: (B, 1)
-        energy = torch.sum(self.v(self.w(hidden_vec) + self.u(in_vec)).tanh())
+        energy = self.v(self.w(hidden_vec) + self.u(in_vec)).tanh()
 
         return energy

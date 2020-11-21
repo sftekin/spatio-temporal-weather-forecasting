@@ -10,9 +10,9 @@ class InputCNN(nn.Module):
         self.n_channels = in_channels
         self.out_channels = out_channels
 
-        self.inc = InputCNN.DoubleConv(in_channels, out_channels, mid_channels)
-        self.down1 = InputCNN.Down(64, 128)
-        self.down2 = InputCNN.Down(128, 256)
+        self.inc = DoubleConv(in_channels, out_channels, mid_channels)
+        self.down1 = Down(64, 128)
+        self.down2 = Down(128, 256)
 
     def forward(self, x):
         x1 = self.inc(x)

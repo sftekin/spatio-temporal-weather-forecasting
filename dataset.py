@@ -37,19 +37,20 @@ class WeatherDataset:
 
         prev_batch = None
         for i in range(self.num_iter):
-            batch_data = self.__load_batch(batch=weather_data[i])
+            batch_data = torch.from_numpy(self.__load_batch(batch=weather_data[i]))
 
             # create x and y
-            x = torch.from_numpy(batch_data[:, :self.window_in_len, ..., self.input_dim])
-            y = torch.from_numpy(batch_data[:, self.window_in_len:, ..., self.output_dim])
+            x = batch_data[:, :self.window_in_len, ..., self.input_dim]
+            y = batch_data[:, self.window_in_len:, ..., [self.output_dim]]
 
             # create flow matrix
             if prev_batch is None:
-                f_x, f_y = self.init_flow_mat(batch_data)
-            else:
-                f_x, f_y = self.create_flow_mat(x=batch_data, x_prev=prev_batch)
+                prev_batch = torch.zeros_like(batch_data)
 
-            yield x, y
+            flow_batch = torch.cat([prev_batch[:, [-1]], batch_data], dim=1)  # (B, T+1, M, N, D)
+            f_x, f_y = self.create_flow_mat(flow_batch)
+
+            yield x, y, f_x, f_y
 
     def __create_buffer(self, in_data):
         """
@@ -75,29 +76,31 @@ class WeatherDataset:
 
         return stacked_data
 
-    def create_flow_mat(self, x):
-        batch_dim, seq_dim, height, width, d_dim = x.shape
-
-        for i in range(seq_dim):
-            f_t = x[:, i, 1:height - 1, 1:width - 1, self.output_dim]
-            if i >= self.flow_dim:
-                f_a = f_t - x[:, i-1, :height-2, :width-2, self.output_dim]
-                f_b = f_t - x[:, i-1, 2:height, 2:width, self.output_dim]
-                f_c = f_t - x[:, i-1, 2:height, :width-2, self.output_dim]
-                f_d = f_t - x[:, i-1, :height-2, 2:width, self.output_dim]
-                f = torch.stack([f_a, f_b, f_c, f_d], dim=-1)
-            else:
-                f = f_t
-
-    def init_flow_mat(self, batch_data):
+    def create_flow_mat(self, y):
         """
-        Take the mean of the
 
+        :param y: (B, T+1, M, N, D)
+        :type y:
         :return:
+        :rtype:
         """
-        f_mean = np.mean(batch_data[..., self.output_dim], dim=-1)
+        batch_dim, seq_dim, height, width, d_dim = y.shape
 
+        f = []
+        for t in range(1, seq_dim):
+            y_t = y[:, t, 1:height - 1, 1:width - 1, self.output_dim]
+            f_a = y_t - y[:, t-1, :height-2, :width-2, self.output_dim]
+            f_b = y_t - y[:, t-1, 2:height, 2:width, self.output_dim]
+            f_c = y_t - y[:, t-1, 2:height, :width-2, self.output_dim]
+            f_d = y_t - y[:, t-1, :height-2, 2:width, self.output_dim]
+            f_t = torch.stack([f_a, f_b, f_c, f_d], dim=-1)
+            f.append(f_t)
+        f = torch.stack(f, dim=1)
 
+        f_x = f[:, :self.window_in_len]
+        f_y = f[:, self.window_in_len:]
+
+        return f_x, f_y
 
     @staticmethod
     def __load_batch(batch):

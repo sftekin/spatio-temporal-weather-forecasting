@@ -18,7 +18,7 @@ data_params = {
 
 batch_gen_params = {
     "input_dim": list(range(14)),
-    "output_dim": [10],
+    "output_dim": 10,
     "window_in_len": 10,
     "window_out_len": 5,
     "batch_size": 32
@@ -29,27 +29,28 @@ trainer_params = {
     "learning_rate": 0.0001,
     "l2_reg": True,
     "clip": 5,
-    "device": 'cuda'
+    "device": 'cpu'
 }
 
 model_params = {
     "input_size": (61, 121),
     "window_in": 10,
     "window_out": 5,
-    "device": 'gpu',
     "num_series": 14,
     "input_attn_dim": 300,
     "temporal_attn_dim": 300,
     "encoder_params": {
-        "hidden_dim": 14,
-        "flow_dim": 2,
+        "hidden_dim": 16,
+        "flow_dim": 4,
         "kernel_size": 3,
-        "bias": False
+        "bias": False,
+        "padding": 2,
     },
     "decoder_params": {
-        "hidden_dim": 28,
-        "flow_dim": 2,
+        "hidden_dim": 16,
+        "flow_dim": 4,
         "kernel_size": 3,
+        "padding": 2,
         "bias": False
     }
 }

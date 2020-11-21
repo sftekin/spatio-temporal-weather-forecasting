@@ -4,7 +4,7 @@ from torch.autograd import Variable
 
 
 class FConvLSTMCell(nn.Module):
-    def __init__(self, input_size, input_dim, hidden_dim, flow_dim,
+    def __init__(self, input_size, input_dim, hidden_dim, flow_dim, padding,
                  kernel_size, bias, device):
         """
         :param tuple of int input_size: width(M) and height(N) of input grid
@@ -22,20 +22,21 @@ class FConvLSTMCell(nn.Module):
 
         self.kernel_size = kernel_size
         self.bias = bias
-        self.padding = kernel_size // 2
+        self.h_padding = kernel_size // 2
+        self.f_padding = padding
 
         self.device = device
 
         self.conv = nn.Conv2d(in_channels=self.input_dim + self.hidden_dim,
                               out_channels=4 * self.hidden_dim,
                               kernel_size=self.kernel_size,
-                              padding=self.padding,
+                              padding=self.h_padding,
                               bias=self.bias)
 
         self.f_conv = nn.Conv2d(in_channels=self.flow_dim,
                                 out_channels=self.hidden_dim,
                                 kernel_size=self.kernel_size,
-                                padding=self.padding,
+                                padding=self.f_padding,
                                 bias=self.bias)
 
     def forward(self, input_tensor, cur_state, flow_tensor):

@@ -2,9 +2,10 @@ import os
 import shutil
 import pandas as pd
 
-from config import experiment_params, data_params, batch_gen_params
+from config import experiment_params, data_params, batch_gen_params, trainer_params, model_params
 from data_creator import DataCreator
 from batch_generator import BatchGenerator
+from trainer import train
 
 
 def run():
@@ -29,8 +30,7 @@ def run():
                                          val_ratio=val_ratio,
                                          params=batch_gen_params)
 
-        for c, (x, y) in enumerate(batch_generator.generate(dataset_name='train')):
-            print(c, x.shape, y.shape)
+        train(batch_generator, trainer_params, model_params)
 
         break
 
