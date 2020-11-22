@@ -1,11 +1,13 @@
 import os
 import shutil
 import pandas as pd
+import pickle as pkl
 
 from config import experiment_params, data_params, batch_gen_params, trainer_params, model_params
 from data_creator import DataCreator
 from batch_generator import BatchGenerator
-from trainer import train
+from trainer import Trainer
+from models.weather_model import WeatherModel
 
 
 def run():
@@ -14,6 +16,10 @@ def run():
     data_step = experiment_params['data_step']
     data_length = experiment_params['data_length']
     val_ratio = experiment_params['val_ratio']
+    normalize_flag = experiment_params['normalize_flag']
+    device = experiment_params['device']
+
+    save_dir = 'results'
 
     dump_file_dir = os.path.join(data_params['weather_raw_dir'], 'data_dump')
 
@@ -28,9 +34,21 @@ def run():
 
         batch_generator = BatchGenerator(weather_data=weather_data,
                                          val_ratio=val_ratio,
-                                         params=batch_gen_params)
+                                         params=batch_gen_params,
+                                         normalize_flag=normalize_flag)
 
-        train(batch_generator, trainer_params, model_params)
+        model = WeatherModel(device=device, **model_params)
+        trainer = Trainer(batch_generator=batch_generator, device=device, **trainer_params)
+
+        loss = trainer.fit(model)
+
+        loss_save_path = os.path.join(save_dir, 'loss.pkl')
+        model_save_path = os.path.join(save_dir, 'model.pkl')
+        trainer_save_path = os.path.join(save_dir, 'trainer.pkl')
+        for path, obj in zip([loss_save_path, model_save_path, trainer_save_path],
+                             [loss, model, trainer]):
+            with open(path, 'wb') as file:
+                pkl.dump(obj, file)
 
         break
 

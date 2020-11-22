@@ -2,7 +2,6 @@ import time
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import pickle as pkl
 from copy import deepcopy
 
 
@@ -47,7 +46,6 @@ class Trainer:
                                               mode='val',
                                               optimizer=None)
 
-            torch.cuda.empty_cache()
             epoch_time = time.time() - start_time
 
             message_str = "\nEpoch: {}, Train_loss: {:.5f}, Validation_loss: {:.5f}, Took {:.3f} seconds."
@@ -75,16 +73,19 @@ class Trainer:
                 message_str = "Early exiting from epoch: {}, Validation error: {:.5f}."
                 print(message_str.format(best_epoch, evaluation_val_loss))
                 break
+
+            torch.cuda.empty_cache()
+
         print('Training finished')
         return train_loss, val_loss, evaluation_val_loss
 
     def step_loop(self, model, mode, optimizer):
         running_loss = 0
-        generator = self.batch_generator.generate(mode)
         batch_size = self.batch_generator.dataset_params['batch_size']
-        step_fun = self.__getattribute__(mode + 'step')
-        for idx, (x, y, f_x, f_y) in enumerate(generator):
-            print('\rtrain:{}/{}'.format(idx, self.batch_generator.num_iter(mode)),
+        step_fun = self.__getattribute__(mode + '_step')
+        idx = 0
+        for idx, (x, y, f_x, f_y) in enumerate(self.batch_generator.generate(mode)):
+            print('\r{}:{}/{}'.format(mode, idx, self.batch_generator.num_iter(mode)),
                   flush=True, end='')
 
             x, y, f_x, f_y = [self.prep_input(i) for i in [x, y, f_x, f_y]]
@@ -100,9 +101,10 @@ class Trainer:
         return running_loss
 
     def train_step(self, model, inputs, optimizer):
+        x, y, f_x, f_y, hidden = inputs
         optimizer.zero_grad()
-        pred = model.forward(*inputs)
-        loss = self.criterion(pred, inputs[1])
+        pred = model.forward(x, f_x, hidden)
+        loss = self.criterion(pred, y)
         loss.backward()
 
         # `clip_grad_norm` helps prevent the exploding gradient problem in RNNs / LSTMs.
@@ -114,12 +116,13 @@ class Trainer:
         return loss.detach().cpu().numpy()
 
     def val_step(self, model, inputs, optimizer):
-        pred = model.forward(*inputs)
-
+        x, y, f_x, f_y, hidden = inputs
+        pred = model.forward(x, f_x, hidden)
         if self.normalizer:
-            pred = self.normalizer.inv_norm(pred)
+            pred = self.normalizer.inv_norm(pred, self.device)
+            y = self.normalizer.inv_norm(y, self.device)
 
-        loss = self.criterion(pred, inputs[1])
+        loss = self.criterion(pred, y)
 
         return loss.detach().cpu().numpy()
 

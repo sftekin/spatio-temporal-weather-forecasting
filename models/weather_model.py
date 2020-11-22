@@ -9,10 +9,11 @@ from models.input_cnn import InputCNN
 
 class WeatherModel(nn.Module):
     def __init__(self, window_in, window_out, input_size, num_series,
-                 input_attn_dim, temporal_attn_dim, encoder_params, decoder_params, device):
+                 input_attn_dim, output_dim, encoder_params, decoder_params, device):
         super().__init__()
 
         self.height, self.width = input_size
+        self.output_dim = output_dim
         self.window_in = window_in
         self.window_out = window_out
         self.num_series = num_series
@@ -58,7 +59,7 @@ class WeatherModel(nn.Module):
         hidden = self.encoder.init_hidden(batch_size)
         return hidden
 
-    def forward(self, x, y, f_x, f_y, hidden):
+    def forward(self, x, f_x, hidden):
         """
 
         :param x: (b, t, d, m, n)
@@ -105,13 +106,28 @@ class WeatherModel(nn.Module):
             en_out_c += hidden[1]
 
         de_hidden = (en_out_h, en_out_c)
+        de_in = x[:, -1, [self.output_dim]]
+        f_y = f_x[:, -1]
         de_out = []
         # parse decoder layer and get outputs recursively
         for t in range(self.window_out):
-            de_hidden = self.decoder(y[:, t], de_hidden, f_y[:, t])
+            de_hidden = self.decoder(de_in, de_hidden, f_y)
             conv_out = self.out_conv(de_hidden[0])
+            f_y = self.create_flow_mat(conv_out, de_in)
             de_out.append(conv_out)
+            de_in = conv_out
 
         de_out = torch.stack(de_out, dim=1)
 
         return de_out
+
+    @staticmethod
+    def create_flow_mat(y, y_prev):
+        batch_dim, d_dim, height, width = y.shape
+        y_t = y[..., 1:height - 1, 1:width - 1]
+        f_a = y_t - y_prev[..., :height - 2, :width - 2]
+        f_b = y_t - y_prev[..., 2:height, 2:width]
+        f_c = y_t - y_prev[..., 2:height, :width - 2]
+        f_d = y_t - y_prev[..., :height - 2, 2:width]
+        f = torch.cat([f_a, f_b, f_c, f_d], dim=1)
+        return f

@@ -24,7 +24,7 @@ class BatchGenerator:
 
         data_dict = {
             'train': in_data[:train_count],
-            'val': in_data[train_count+val_count:]
+            'val': in_data[train_count:]
         }
 
         return data_dict
