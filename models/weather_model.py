@@ -32,9 +32,9 @@ class WeatherModel(nn.Module):
                                      padding=self.encoder_params['padding'],
                                      device=self.device)
 
-        self.input_attn = Attention(input_size=(15, 30),
+        self.input_attn = Attention(input_size=(30, 60),
                                     hidden_size=(self.height, self.width),
-                                    input_dim=256,
+                                    input_dim=128,
                                     hidden_dim=self.encoder_params['hidden_dim'],
                                     attn_dim=input_attn_dim)
 

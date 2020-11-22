@@ -5,7 +5,7 @@ from torch.utils.data import Dataset
 
 
 class WeatherDataset:
-    def __init__(self, weather_data, input_dim, output_dim, window_in_len, window_out_len, batch_size):
+    def __init__(self, weather_data, input_dim, output_dim, window_in_len, window_out_len, batch_size, normalizer):
         """
 
         :param input_dim:
@@ -22,6 +22,7 @@ class WeatherDataset:
         self.total_window_len = window_in_len + window_out_len
         self.batch_size = batch_size
         self.num_iter = 0
+        self.normalizer = normalizer
 
     def next(self):
         """
@@ -38,6 +39,9 @@ class WeatherDataset:
         prev_batch = None
         for i in range(self.num_iter):
             batch_data = torch.from_numpy(self.__load_batch(batch=weather_data[i]))
+
+            if self.normalizer:
+                batch_data = self.normalizer.norm(batch_data)
 
             # create x and y
             x = batch_data[:, :self.window_in_len, ..., self.input_dim]

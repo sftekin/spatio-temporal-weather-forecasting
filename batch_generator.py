@@ -1,11 +1,18 @@
 from dataset import WeatherDataset
+from models.adaptive_normalizer import AdaptiveNormalizer
 
 
 class BatchGenerator:
-    def __init__(self, weather_data, val_ratio, params):
+    def __init__(self, weather_data, val_ratio, normalize_flag, params):
         self.weather_data = weather_data
         self.val_ratio = val_ratio
         self.dataset_params = params
+        self.normalize_flag = normalize_flag
+
+        if self.normalize_flag:
+            self.normalizer = AdaptiveNormalizer(output_dim=params['output_dim'])
+        else:
+            self.normalizer = None
 
         self.weather_dict = self.__split_data(self.weather_data)
         self.dataset_dict = self.__create_sets()
@@ -25,7 +32,9 @@ class BatchGenerator:
     def __create_sets(self):
         hurricane_dataset = {}
         for i in ['train', 'val']:
-            dataset = WeatherDataset(weather_data=self.weather_dict[i], **self.dataset_params)
+            dataset = WeatherDataset(weather_data=self.weather_dict[i],
+                                     normalizer=self.normalizer,
+                                     **self.dataset_params)
             hurricane_dataset[i] = dataset
 
         return hurricane_dataset

@@ -12,14 +12,11 @@ class InputCNN(nn.Module):
 
         self.inc = DoubleConv(in_channels, out_channels, mid_channels)
         self.down1 = Down(64, 128)
-        self.down2 = Down(128, 256)
 
     def forward(self, x):
         x1 = self.inc(x)
         x2 = self.down1(x1)
-        x3 = self.down2(x2)
-
-        return x3
+        return x2
 
 
 class DoubleConv(nn.Module):
