@@ -3,9 +3,10 @@ from models.adaptive_normalizer import AdaptiveNormalizer
 
 
 class BatchGenerator:
-    def __init__(self, weather_data, val_ratio, normalize_flag, params):
+    def __init__(self, weather_data, val_ratio, test_ratio, normalize_flag, params):
         self.weather_data = weather_data
         self.val_ratio = val_ratio
+        self.test_ratio = test_ratio
         self.dataset_params = params
         self.normalize_flag = normalize_flag
 
@@ -20,11 +21,14 @@ class BatchGenerator:
     def __split_data(self, in_data):
         data_len = len(in_data)
         val_count = int(data_len * self.val_ratio)
-        train_count = data_len - val_count
+        test_count = int(data_len * self.val_ratio)
+
+        train_count = data_len - val_count - test_count
 
         data_dict = {
             'train': in_data[:train_count],
-            'val': in_data[train_count:]
+            'val': in_data[train_count:train_count+val_count],
+            'test': in_data[train_count+val_count:]
         }
 
         return data_dict
@@ -45,5 +49,3 @@ class BatchGenerator:
     def generate(self, dataset_name):
         selected_loader = self.dataset_dict[dataset_name]
         yield from selected_loader.next()
-
-

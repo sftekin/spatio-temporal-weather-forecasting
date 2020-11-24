@@ -7,18 +7,15 @@ from copy import deepcopy
 
 class Trainer:
 
-    def __init__(self, batch_generator, num_epochs, early_stop_tolerance, clip, learning_rate, device):
-        self.batch_generator = batch_generator
+    def __init__(self, num_epochs, early_stop_tolerance, clip, learning_rate, device):
         self.num_epochs = num_epochs
         self.clip = clip
         self.learning_rate = learning_rate
         self.tolerance = early_stop_tolerance
         self.device = torch.device(device)
-
-        self.normalizer = batch_generator.normalizer
         self.criterion = nn.MSELoss()
 
-    def fit(self, model):
+    def fit(self, model, batch_generator):
         model = model.to(self.device)
         model.train()
 
@@ -37,14 +34,16 @@ class Trainer:
             start_time = time.time()
 
             # train
-            running_train_loss = self.step_loop(model=model,
-                                                mode='train',
-                                                optimizer=optimizer)
+            running_train_loss = self.__step_loop(model=model,
+                                                  generator=batch_generator,
+                                                  mode='train',
+                                                  optimizer=optimizer)
 
             # validation
-            running_val_loss = self.step_loop(model=model,
-                                              mode='val',
-                                              optimizer=None)
+            running_val_loss = self.__step_loop(model=model,
+                                                generator=batch_generator,
+                                                mode='val',
+                                                optimizer=None)
 
             epoch_time = time.time() - start_time
 
@@ -66,9 +65,10 @@ class Trainer:
             if tolerance > self.tolerance or epoch == self.num_epochs - 1:
                 model.load_state_dict(best_dict)
 
-                evaluation_val_loss = self.step_loop(model=model,
-                                                     mode='val',
-                                                     optimizer=None)
+                evaluation_val_loss = self.__step_loop(model=model,
+                                                       generator=batch_generator,
+                                                       mode='val',
+                                                       optimizer=None)
 
                 message_str = "Early exiting from epoch: {}, Validation error: {:.5f}."
                 print(message_str.format(best_epoch, evaluation_val_loss))
@@ -76,31 +76,43 @@ class Trainer:
 
             torch.cuda.empty_cache()
 
-        print('Training finished')
+        print('Train finished, best eval lost: {:.5f}'.format(evaluation_val_loss))
         return train_loss, val_loss, evaluation_val_loss
 
-    def step_loop(self, model, mode, optimizer):
+    def transform(self, model, batch_generator):
+        test_loss = self.__step_loop(model=model,
+                                     generator=batch_generator,
+                                     mode='test',
+                                     optimizer=None)
+        print('Test finished, best eval lost: {:.5f}'.format(test_loss))
+        return test_loss
+
+    def __step_loop(self, model, generator, mode, optimizer):
         running_loss = 0
-        batch_size = self.batch_generator.dataset_params['batch_size']
-        step_fun = self.__getattribute__(mode + '_step')
+        batch_size = generator.dataset_params['batch_size']
+        if mode in ['test', 'val']:
+            step_fun = self.__val_step
+        else:
+            step_fun = self.__train_step
         idx = 0
-        for idx, (x, y, f_x, f_y) in enumerate(self.batch_generator.generate(mode)):
-            print('\r{}:{}/{}'.format(mode, idx, self.batch_generator.num_iter(mode)),
+        for idx, (x, y, f_x, f_y) in enumerate(generator.generate(mode)):
+            print('\r{}:{}/{}'.format(mode, idx, generator.num_iter(mode)),
                   flush=True, end='')
 
-            x, y, f_x, f_y = [self.prep_input(i) for i in [x, y, f_x, f_y]]
+            x, y, f_x, f_y = [self.__prep_input(i) for i in [x, y, f_x, f_y]]
             hidden = model.init_hidden(batch_size)
 
             loss = step_fun(model=model,
                             inputs=[x, y, f_x, f_y, hidden],
-                            optimizer=optimizer)
+                            optimizer=optimizer,
+                            generator=generator)
 
             running_loss += loss
         running_loss /= (idx + 1)
 
         return running_loss
 
-    def train_step(self, model, inputs, optimizer):
+    def __train_step(self, model, inputs, optimizer, generator):
         x, y, f_x, f_y, hidden = inputs
         optimizer.zero_grad()
         pred = model.forward(x, f_x, hidden)
@@ -115,20 +127,19 @@ class Trainer:
 
         return loss.detach().cpu().numpy()
 
-    def val_step(self, model, inputs, optimizer):
+    def __val_step(self, model, inputs, optimizer, generator):
         x, y, f_x, f_y, hidden = inputs
         pred = model.forward(x, f_x, hidden)
-        if self.normalizer:
-            pred = self.normalizer.inv_norm(pred, self.device)
-            y = self.normalizer.inv_norm(y, self.device)
+        if generator.normalizer:
+            pred = generator.normalizer.inv_norm(pred, self.device)
+            y = generator.normalizer.inv_norm(y, self.device)
 
         loss = self.criterion(pred, y)
 
         return loss.detach().cpu().numpy()
 
-    def prep_input(self, x):
+    def __prep_input(self, x):
         x = x.float().to(self.device)
         # (b, t, m, n, d) -> (b, t, d, m, n)
         x = x.permute(0, 1, 4, 2, 3)
         return x
-
