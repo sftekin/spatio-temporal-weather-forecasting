@@ -35,7 +35,7 @@ class BatchGenerator:
 
     def __create_sets(self):
         hurricane_dataset = {}
-        for i in ['train', 'val']:
+        for i in ['train', 'val', 'test']:
             dataset = WeatherDataset(weather_data=self.weather_dict[i],
                                      normalizer=self.normalizer,
                                      **self.dataset_params)

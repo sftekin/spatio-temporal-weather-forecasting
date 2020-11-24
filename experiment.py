@@ -30,8 +30,8 @@ def predict(batch_generator):
     # find the best model
     model, trainer = _find_best_model()
 
-    trainer.fit_batch_generator(batch_generator)
-    predict_loss = trainer.transform(model)
+#    trainer.fit_batch_generator(batch_generator)
+    predict_loss = trainer.transform(model, batch_generator)
 
     return predict_loss
 
