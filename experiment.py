@@ -18,7 +18,7 @@ def train(model, batch_generator, trainer_params, device):
     train_val_loss = trainer.fit(model, batch_generator)
     test_loss = trainer.transform(model, batch_generator)
 
-    train_val_loss += test_loss
+    train_val_loss += (test_loss,)
 
     for path, obj in zip([loss_save_path, model_save_path, trainer_save_path],
                          [train_val_loss, model, trainer]):
@@ -46,17 +46,19 @@ def _find_best_model():
         loss_path = os.path.join(exp, 'loss.pkl')
         model_path = os.path.join(exp, 'model.pkl')
         trainer_path = os.path.join(exp, 'trainer.pkl')
-
-        with open(loss_path, 'rb') as f:
-            loss = pkl.load(f)
-        best_eval_loss = loss[-1]
-        if best_eval_loss < best_loss:
-            best_loss = best_eval_loss
-            with open(model_path, 'rb') as f:
-                best_model = pkl.load(f)
-            with open(trainer_path, 'rb') as f:
-                trainer = pkl.load(f)
-
+        
+        try:
+            with open(loss_path, 'rb') as f:
+                loss = pkl.load(f)
+            best_eval_loss = loss[-1]
+            if best_eval_loss < best_loss:
+                best_loss = best_eval_loss
+                with open(model_path, 'rb') as f:
+                    best_model = pkl.load(f)
+                with open(trainer_path, 'rb') as f:
+                    trainer = pkl.load(f)
+        except Exception as e:
+            pass
     return best_model, trainer
 
 
