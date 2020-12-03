@@ -38,7 +38,7 @@ def run():
 
         model = WeatherModel(device=device, **model_params)
 
-        train(model=model, batch_generator=batch_generator, trainer_params=trainer_params, device=device)
+        # train(model=model, batch_generator=batch_generator, trainer_params=trainer_params, device=device)
         predict(batch_generator=batch_generator)
 
         break

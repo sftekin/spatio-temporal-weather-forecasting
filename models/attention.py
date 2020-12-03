@@ -40,6 +40,6 @@ class Attention(nn.Module):
         in_vec = torch.flatten(in_conv_out, start_dim=2)
 
         # u(in_vec): (B, 1, attn_dim), w(in_vec): (B, 1, attn_dim), energy: (B, 1)
-        energy = self.v(self.w(hidden_vec) + self.u(in_vec)).tanh()
+        energy = self.v((self.w(hidden_vec) + self.u(in_vec)).tanh())
 
         return energy
