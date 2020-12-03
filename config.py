@@ -6,6 +6,7 @@ experiment_params = {
     "val_ratio": 0.1,
     "test_ratio": 0.1,
     "normalize_flag": True,
+    "model": "moving_avg",
     "device": 'cuda'
 }
 
@@ -35,24 +36,32 @@ trainer_params = {
 }
 
 model_params = {
-    "input_size": (61, 121),
-    "window_in": 30,
-    "window_out": 10,
-    "num_series": 9,
-    "output_dim": 5,
-    "input_attn_dim": 200,
-    "encoder_params": {
-        "hidden_dim": 16,
-        "flow_dim": 4,
-        "kernel_size": 3,
-        "bias": False,
-        "padding": 2,
+    "moving_avg": {
+        "window_in": 30,
+        "window_out": 10,
+        "output_dim": 5,
+        "mode": "EMA"
     },
-    "decoder_params": {
-        "hidden_dim": 16,
-        "flow_dim": 4,
-        "kernel_size": 3,
-        "padding": 2,
-        "bias": False
+    "weather_model": {
+        "input_size": (61, 121),
+        "window_in": 30,
+        "window_out": 10,
+        "num_series": 9,
+        "output_dim": 5,
+        "input_attn_dim": 200,
+        "encoder_params": {
+            "hidden_dim": 16,
+            "flow_dim": 4,
+            "kernel_size": 3,
+            "bias": False,
+            "padding": 2,
+        },
+        "decoder_params": {
+            "hidden_dim": 16,
+            "flow_dim": 4,
+            "kernel_size": 3,
+            "padding": 2,
+            "bias": False
+        }
     }
 }

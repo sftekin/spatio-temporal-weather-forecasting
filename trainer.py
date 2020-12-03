@@ -19,8 +19,11 @@ class Trainer:
         model = model.to(self.device)
         model.train()
 
-        optimizer = optim.Adam(model.parameters(),
-                               lr=self.learning_rate)
+        if model.is_trainable:
+            optimizer = optim.Adam(model.parameters(),
+                                   lr=self.learning_rate)
+        else:
+            optimizer = None
 
         train_loss = []
         val_loss = []
@@ -99,9 +102,12 @@ class Trainer:
             print('\r{}:{}/{}'.format(mode, idx, generator.num_iter(mode)),
                   flush=True, end='')
 
-            x, y, f_x, f_y = [self.__prep_input(i) for i in [x, y, f_x, f_y]]
-            hidden = model.init_hidden(batch_size)
+            if hasattr(model, 'hidden'):
+                hidden = model.init_hidden(batch_size)
+            else:
+                hidden = None
 
+            x, y, f_x, f_y = [self.__prep_input(i) for i in [x, y, f_x, f_y]]
             loss = step_fun(model=model,
                             inputs=[x, y, f_x, f_y, hidden],
                             optimizer=optimizer,
@@ -114,22 +120,26 @@ class Trainer:
 
     def __train_step(self, model, inputs, optimizer, generator):
         x, y, f_x, f_y, hidden = inputs
-        optimizer.zero_grad()
-        pred = model.forward(x, f_x, hidden)
+        if optimizer:
+            optimizer.zero_grad()
+        pred = model.forward(x=x, f_x=f_x, hidden=hidden)
         loss = self.criterion(pred, y)
-        loss.backward()
+        print(f"  loss: {loss.item()}")
 
-        # `clip_grad_norm` helps prevent the exploding gradient problem in RNNs / LSTMs.
-        nn.utils.clip_grad_norm_(model.parameters(), self.clip)
+        if model.is_trainable:
+            loss.backward()
 
-        # take step in classifier's optimizer
-        optimizer.step()
+            # `clip_grad_norm` helps prevent the exploding gradient problem in RNNs / LSTMs.
+            nn.utils.clip_grad_norm_(model.parameters(), self.clip)
+
+            # take step in classifier's optimizer
+            optimizer.step()
 
         return loss.detach().cpu().numpy()
 
     def __val_step(self, model, inputs, optimizer, generator):
         x, y, f_x, f_y, hidden = inputs
-        pred = model.forward(x, f_x, hidden)
+        pred = model.forward(x=x, f_x=f_x, hidden=hidden)
         if generator.normalizer:
             pred = generator.normalizer.inv_norm(pred, self.device)
             y = generator.normalizer.inv_norm(y, self.device)

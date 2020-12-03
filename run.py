@@ -5,8 +5,9 @@ import pandas as pd
 from config import experiment_params, data_params, batch_gen_params, trainer_params, model_params
 from data_creator import DataCreator
 from batch_generator import BatchGenerator
-from experiment import train, predict
-from models.weather_model import WeatherModel
+from experiment import predict, train
+from models.weather.weather_model import WeatherModel
+from models.baseline.moving_avg import MovingAvg
 
 
 def run():
@@ -17,7 +18,12 @@ def run():
     val_ratio = experiment_params['val_ratio']
     test_ratio = experiment_params['test_ratio']
     normalize_flag = experiment_params['normalize_flag']
+    model_name = experiment_params['model']
     device = experiment_params['device']
+    model_dispatcher = {
+        'moving_avg': MovingAvg,
+        'weather_model': WeatherModel
+    }
 
     dump_file_dir = os.path.join(data_params['weather_raw_dir'], 'data_dump')
 
@@ -36,9 +42,9 @@ def run():
                                          params=batch_gen_params,
                                          normalize_flag=normalize_flag)
 
-        model = WeatherModel(device=device, **model_params)
+        model = model_dispatcher[model_name](device=device, **model_params[model_name])
 
-        # train(model=model, batch_generator=batch_generator, trainer_params=trainer_params, device=device)
+        train(model=model, batch_generator=batch_generator, trainer_params=trainer_params, device=device)
         predict(batch_generator=batch_generator)
 
         break

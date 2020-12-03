@@ -2,9 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from models.attention import Attention
-from models.f_conv_lstm import FConvLSTMCell
-from models.input_cnn import InputCNN
+from models.weather.attention import Attention
+from models.weather.f_conv_lstm import FConvLSTMCell
+from models.weather.input_cnn import InputCNN
 
 
 class WeatherModel(nn.Module):
@@ -21,6 +21,7 @@ class WeatherModel(nn.Module):
         self.encoder_params = encoder_params
         self.decoder_params = decoder_params
         self.device = device
+        self.is_trainable = True
 
         self.input_cnn = InputCNN(in_channels=self.window_in)
 
@@ -63,12 +64,8 @@ class WeatherModel(nn.Module):
 
         :param x: (b, t, d, m, n)
         :type x:
-        :param y: (b, t, d, m, n)
-        :type y: 
         :param f_x: (b, t, 4, m, n)
         :type f_x:
-        :param f_y: (b, t, 4, m, n)
-        :type f_y:
         :param hidden: [(b, d', m, n), (b, d', m, n)]
         :type hidden:
         :return:
