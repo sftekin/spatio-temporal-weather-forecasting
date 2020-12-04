@@ -54,6 +54,7 @@ class WeatherModel(nn.Module):
                                   kernel_size=3,
                                   padding=1,
                                   bias=False)
+        self.hidden = None
 
     def init_hidden(self, batch_size):
         hidden = self.encoder.init_hidden(batch_size)

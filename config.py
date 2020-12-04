@@ -30,7 +30,7 @@ batch_gen_params = {
 
 trainer_params = {
     "num_epochs": 30,
-    "learning_rate": 0.001,
+    "learning_rate": 0.0003,
     "clip": 5,
     "early_stop_tolerance": 4
 }
@@ -40,24 +40,24 @@ model_params = {
         "window_in": 30,
         "window_out": 10,
         "output_dim": 5,
-        "mode": "EMA"
+        "mode": "WMA"
     },
     "weather_model": {
         "input_size": (61, 121),
-        "window_in": 30,
+        "window_in": 10,
         "window_out": 10,
         "num_series": 9,
         "output_dim": 5,
-        "input_attn_dim": 200,
+        "input_attn_dim": 300,
         "encoder_params": {
-            "hidden_dim": 16,
+            "hidden_dim": 32,
             "flow_dim": 4,
             "kernel_size": 3,
             "bias": False,
             "padding": 2,
         },
         "decoder_params": {
-            "hidden_dim": 16,
+            "hidden_dim": 32,
             "flow_dim": 4,
             "kernel_size": 3,
             "padding": 2,

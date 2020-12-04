@@ -63,7 +63,7 @@ class MovingAvg(nn.Module):
         # attention to right
         window = window[:self.window_in]
         window = torch.from_numpy(window).float()
-        window = nn.Parameter(window, requires_grad=True).to(self.device)
+        window = nn.Parameter(window, requires_grad=True)
 
         return window
 
