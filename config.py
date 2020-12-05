@@ -6,7 +6,7 @@ experiment_params = {
     "val_ratio": 0.1,
     "test_ratio": 0.1,
     "normalize_flag": True,
-    "model": "convlstm",
+    "model": "weather_model",
     "device": 'cuda'
 }
 
@@ -30,7 +30,7 @@ batch_gen_params = {
 
 trainer_params = {
     "num_epochs": 30,
-    "learning_rate": 0.001,
+    "learning_rate": 0.0003,
     "clip": 5,
     "early_stop_tolerance": 4
 }
