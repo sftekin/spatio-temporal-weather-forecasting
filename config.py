@@ -62,6 +62,10 @@ model_params = {
             "peephole_con": False
         }
     },
+    "u_net": {
+        "in_channels": 9,
+        "out_channels": 1
+    },
     "weather_model": {
         "input_size": (61, 121),
         "window_in": 10,

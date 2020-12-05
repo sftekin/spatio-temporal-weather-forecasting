@@ -9,6 +9,7 @@ from experiment import predict, train
 from models.weather.weather_model import WeatherModel
 from models.baseline.moving_avg import MovingAvg
 from models.baseline.convlstm import ConvLSTM
+from models.baseline.u_net import UNet
 
 
 def run():
@@ -24,7 +25,8 @@ def run():
     model_dispatcher = {
         'moving_avg': MovingAvg,
         'convlstm': ConvLSTM,
-        'weather_model': WeatherModel
+        'u_net': UNet,
+        'weather_model': WeatherModel,
     }
 
     dump_file_dir = os.path.join(data_params['weather_raw_dir'], 'data_dump')
