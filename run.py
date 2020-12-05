@@ -8,6 +8,7 @@ from batch_generator import BatchGenerator
 from experiment import predict, train
 from models.weather.weather_model import WeatherModel
 from models.baseline.moving_avg import MovingAvg
+from models.baseline.convlstm import ConvLSTM
 
 
 def run():
@@ -22,6 +23,7 @@ def run():
     device = experiment_params['device']
     model_dispatcher = {
         'moving_avg': MovingAvg,
+        'convlstm': ConvLSTM,
         'weather_model': WeatherModel
     }
 
