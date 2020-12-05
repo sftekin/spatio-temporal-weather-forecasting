@@ -6,7 +6,7 @@ experiment_params = {
     "val_ratio": 0.1,
     "test_ratio": 0.1,
     "normalize_flag": True,
-    "model": "moving_avg",
+    "model": "convlstm",
     "device": 'cuda'
 }
 
@@ -23,14 +23,14 @@ data_params = {
 batch_gen_params = {
     "input_dim": [0, 2, 3, 4, 7, 10, 11, 12, 13],
     "output_dim": 10,
-    "window_in_len": 30,
+    "window_in_len": 10,
     "window_out_len": 10,
     "batch_size": 8,
 }
 
 trainer_params = {
     "num_epochs": 30,
-    "learning_rate": 0.0003,
+    "learning_rate": 0.001,
     "clip": 5,
     "early_stop_tolerance": 4
 }
@@ -41,6 +41,26 @@ model_params = {
         "window_out": 10,
         "output_dim": 5,
         "mode": "WMA"
+    },
+    "convlstm": {
+        "input_size": (61, 121),
+        "window_in": 10,
+        "window_out": 10,
+        "num_layers": 3,
+        "encoder_params": {
+            "input_dim": 9,
+            "hidden_dims": [1, 16, 32],
+            "kernel_size": [3, 3, 3],
+            "bias": False,
+            "peephole_con": False
+        },
+        "decoder_params": {
+            "input_dim": 32,
+            "hidden_dims": [32, 16, 1],
+            "kernel_size": [3, 3, 3],
+            "bias": False,
+            "peephole_con": False
+        }
     },
     "weather_model": {
         "input_size": (61, 121),
