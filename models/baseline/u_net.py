@@ -72,7 +72,7 @@ class OutConv(nn.Module):
 
 
 class UNet(nn.Module):
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels, device):
         super(UNet, self).__init__()
 
         self.n_channels = in_channels
@@ -91,6 +91,8 @@ class UNet(nn.Module):
 
         self.outc = OutConv(64, out_channels=out_channels)
 
+        self.is_trainable = True
+
     def forward(self, x, **kwargs):
         """
         :param x: 5-D tensor of shape (b, t, m, n, d)
@@ -100,7 +102,7 @@ class UNet(nn.Module):
 
         output = []
         for t in range(seq_len):
-            x_t = x[:, t]
+            x_t = x.contiguous()[:, t]
             x1 = self.inc(x_t)
             x2 = self.down1(x1)
             x3 = self.down2(x2)

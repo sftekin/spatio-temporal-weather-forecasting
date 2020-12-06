@@ -6,7 +6,7 @@ experiment_params = {
     "val_ratio": 0.1,
     "test_ratio": 0.1,
     "normalize_flag": True,
-    "model": "weather_model",
+    "model": "u_net",
     "device": 'cuda'
 }
 
@@ -30,7 +30,7 @@ batch_gen_params = {
 
 trainer_params = {
     "num_epochs": 30,
-    "learning_rate": 0.0003,
+    "learning_rate": 0.0007,
     "clip": 5,
     "early_stop_tolerance": 4
 }
@@ -72,16 +72,16 @@ model_params = {
         "window_out": 10,
         "num_series": 9,
         "output_dim": 5,
-        "input_attn_dim": 300,
+        "input_attn_dim": 100,
         "encoder_params": {
-            "hidden_dim": 32,
+            "hidden_dim": 16,
             "flow_dim": 4,
             "kernel_size": 3,
             "bias": False,
             "padding": 2,
         },
         "decoder_params": {
-            "hidden_dim": 32,
+            "hidden_dim": 16,
             "flow_dim": 4,
             "kernel_size": 3,
             "padding": 2,
