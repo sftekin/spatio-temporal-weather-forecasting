@@ -9,11 +9,11 @@ from models.weather.input_cnn import InputCNN
 
 class WeatherModel(nn.Module):
     def __init__(self, window_in, window_out, input_size, num_series,
-                 input_attn_dim, output_dim, encoder_params, decoder_params, device):
+                 input_attn_dim, selected_dim, encoder_params, decoder_params, device):
         super().__init__()
 
         self.height, self.width = input_size
-        self.output_dim = output_dim
+        self.selected_dim = selected_dim
         self.window_in = window_in
         self.window_out = window_out
         self.num_series = num_series
@@ -41,7 +41,7 @@ class WeatherModel(nn.Module):
                                     attn_dim=input_attn_dim)
 
         self.decoder = FConvLSTMCell(input_size=(self.height, self.width),
-                                     input_dim=1,
+                                     input_dim=17,
                                      hidden_dim=self.encoder_params['hidden_dim'],
                                      flow_dim=self.decoder_params['flow_dim'],
                                      kernel_size=self.decoder_params['kernel_size'],
@@ -54,6 +54,12 @@ class WeatherModel(nn.Module):
                                   kernel_size=3,
                                   padding=1,
                                   bias=False)
+
+        self.output_attn = Attention(input_size=(self.height, self.width),
+                                     hidden_size=(self.height, self.width),
+                                     input_dim=self.encoder_params['hidden_dim'],
+                                     hidden_dim=self.decoder_params['hidden_dim'],
+                                     attn_dim=input_attn_dim)
         self.hidden = None
 
     def init_hidden(self, batch_size):
@@ -89,7 +95,7 @@ class WeatherModel(nn.Module):
         alpha_tensor = F.softmax(alpha_tensor, dim=1)
 
         # calculate encoder output
-        en_out_h, en_out_c = (0, 0)
+        en_out = []
         for t in range(self.window_in):
             x_t = x[:, t].view(batch_size, dim_len, -1)
             x_tilda = x_t * alpha_tensor.unsqueeze(2)
@@ -99,17 +105,30 @@ class WeatherModel(nn.Module):
                                   cur_state=hidden,
                                   flow_tensor=f_x[:, t])
 
-            en_out_h += hidden[0]
-            en_out_c += hidden[1]
+            en_out.append(hidden[0])
+        en_out = torch.stack(en_out, dim=1)
 
-        de_hidden = (en_out_h, en_out_c)
-        de_in = x[:, -1, [self.output_dim]]
+        de_hidden = self.decoder.init_hidden(batch_size)
+        de_in = x[:, -1, [self.selected_dim]]
         f_y = f_x[:, -1]
         de_out = []
         # parse decoder layer and get outputs recursively
         for t in range(self.window_out):
-            de_hidden = self.decoder(de_in, de_hidden, f_y)
+
+            beta_list = []
+            for k in range(self.window_in):
+                beta = self.output_attn(en_out[:, k], de_hidden)
+                beta_list.append(beta)
+            # dim(beta_tensor): (B, T)
+            beta_tensor = F.softmax(torch.cat(beta_list, dim=1).squeeze(), dim=1)
+
+            en_dim = en_out.shape[2]
+            context_t = torch.sum(en_out.view(batch_size, self.window_in, -1) * beta_tensor.unsqueeze(2), dim=1)
+            context_t = context_t.view(batch_size, en_dim, self.decoder.height, self.decoder.width)
+
+            de_hidden = self.decoder(torch.cat([context_t, de_in], dim=1), de_hidden, f_y)
             conv_out = self.out_conv(de_hidden[0])
+
             f_y = self.create_flow_mat(conv_out, de_in)
             de_out.append(conv_out)
             de_in = conv_out

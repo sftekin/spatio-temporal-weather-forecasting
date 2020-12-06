@@ -63,16 +63,17 @@ model_params = {
         }
     },
     "u_net": {
-        "in_channels": 9,
-        "out_channels": 1
+        "selected_dim": 5,
+        "in_channels": 10,
+        "out_channels": 10
     },
     "weather_model": {
         "input_size": (61, 121),
         "window_in": 10,
         "window_out": 10,
         "num_series": 9,
-        "output_dim": 5,
-        "input_attn_dim": 100,
+        "selected_dim": 5,
+        "input_attn_dim": 300,
         "encoder_params": {
             "hidden_dim": 16,
             "flow_dim": 4,

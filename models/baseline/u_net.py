@@ -72,11 +72,12 @@ class OutConv(nn.Module):
 
 
 class UNet(nn.Module):
-    def __init__(self, in_channels, out_channels, device):
+    def __init__(self, selected_dim, in_channels, out_channels, device):
         super(UNet, self).__init__()
 
         self.n_channels = in_channels
         self.out_channels = out_channels
+        self.selected_dim = selected_dim
 
         self.inc = DoubleConv(in_channels, out_channels=64, mid_channels=32)
         self.down1 = Down(64, 128)
@@ -95,25 +96,22 @@ class UNet(nn.Module):
 
     def forward(self, x, **kwargs):
         """
-        :param x: 5-D tensor of shape (b, t, m, n, d)
-        :return: (b, t, m, n, d)
+        :param x: 5-D tensor of shape (b, t, d, m, n)
+        :return: (b, t, d, m, n)
         """
-        seq_len = x.shape[1]
+        x_d = x[:, :, self.selected_dim]
 
-        output = []
-        for t in range(seq_len):
-            x_t = x.contiguous()[:, t]
-            x1 = self.inc(x_t)
-            x2 = self.down1(x1)
-            x3 = self.down2(x2)
-            x4 = self.down3(x3)
-            x5 = self.down4(x4)
-            x_t = self.up1(x5, x4)
-            x_t = self.up2(x_t, x3)
-            x_t = self.up3(x_t, x2)
-            x_t = self.up4(x_t, x1)
-            logits = self.outc(x_t)
-            output.append(logits)
-        output = torch.stack(output, dim=1)
+        x1 = self.inc(x_d)
+        x2 = self.down1(x1)
+        x3 = self.down2(x2)
+        x4 = self.down3(x3)
+        x5 = self.down4(x4)
+        x_t = self.up1(x5, x4)
+        x_t = self.up2(x_t, x3)
+        x_t = self.up3(x_t, x2)
+        x_t = self.up4(x_t, x1)
+        logits = self.outc(x_t)
+
+        output = logits.unsqueeze(2)
 
         return output
