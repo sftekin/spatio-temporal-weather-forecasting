@@ -73,8 +73,10 @@ model_params = {
         "window_out": 10,
         "num_series": 9,
         "selected_dim": 5,
-        "input_attn_dim": 300,
         "encoder_params": {
+            "attn_input_size": (30, 60),
+            "attn_dim": 300,
+            "attn_input_dim": 128,
             "hidden_dim": 16,
             "flow_dim": 4,
             "kernel_size": 3,
@@ -82,6 +84,8 @@ model_params = {
             "padding": 2,
         },
         "decoder_params": {
+            "attn_dim": 300,
+            "input_dim": 17,
             "hidden_dim": 16,
             "flow_dim": 4,
             "kernel_size": 3,

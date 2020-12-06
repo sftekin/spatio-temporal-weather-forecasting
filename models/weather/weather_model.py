@@ -9,7 +9,7 @@ from models.weather.input_cnn import InputCNN
 
 class WeatherModel(nn.Module):
     def __init__(self, window_in, window_out, input_size, num_series,
-                 input_attn_dim, selected_dim, encoder_params, decoder_params, device):
+                 selected_dim, encoder_params, decoder_params, device):
         super().__init__()
 
         self.height, self.width = input_size
@@ -27,29 +27,29 @@ class WeatherModel(nn.Module):
 
         self.encoder = FConvLSTMCell(input_size=(self.height, self.width),
                                      input_dim=self.num_series,
-                                     hidden_dim=self.encoder_params['hidden_dim'],
-                                     flow_dim=self.encoder_params['flow_dim'],
-                                     kernel_size=self.encoder_params['kernel_size'],
-                                     bias=self.encoder_params['bias'],
-                                     padding=self.encoder_params['padding'],
+                                     hidden_dim=encoder_params['hidden_dim'],
+                                     flow_dim=encoder_params['flow_dim'],
+                                     kernel_size=encoder_params['kernel_size'],
+                                     bias=encoder_params['bias'],
+                                     padding=encoder_params['padding'],
                                      device=self.device)
 
-        self.input_attn = Attention(input_size=(30, 60),
+        self.input_attn = Attention(input_size=encoder_params['attn_input_size'],
                                     hidden_size=(self.height, self.width),
-                                    input_dim=128,
-                                    hidden_dim=self.encoder_params['hidden_dim'],
-                                    attn_dim=input_attn_dim)
+                                    input_dim=encoder_params['attn_input_dim'],
+                                    hidden_dim=encoder_params['hidden_dim'],
+                                    attn_dim=encoder_params['attn_dim'])
 
         self.decoder = FConvLSTMCell(input_size=(self.height, self.width),
-                                     input_dim=17,
-                                     hidden_dim=self.encoder_params['hidden_dim'],
-                                     flow_dim=self.decoder_params['flow_dim'],
-                                     kernel_size=self.decoder_params['kernel_size'],
-                                     bias=self.decoder_params['bias'],
-                                     padding=self.decoder_params['padding'],
-                                     device=self.device)
+                                     input_dim=decoder_params['input_dim'],
+                                     hidden_dim=encoder_params['hidden_dim'],
+                                     flow_dim=decoder_params['flow_dim'],
+                                     kernel_size=decoder_params['kernel_size'],
+                                     bias=decoder_params['bias'],
+                                     padding=decoder_params['padding'],
+                                     device=device)
 
-        self.out_conv = nn.Conv2d(in_channels=self.encoder_params['hidden_dim'],
+        self.out_conv = nn.Conv2d(in_channels=encoder_params['hidden_dim'],
                                   out_channels=1,
                                   kernel_size=3,
                                   padding=1,
@@ -57,9 +57,9 @@ class WeatherModel(nn.Module):
 
         self.output_attn = Attention(input_size=(self.height, self.width),
                                      hidden_size=(self.height, self.width),
-                                     input_dim=self.encoder_params['hidden_dim'],
-                                     hidden_dim=self.decoder_params['hidden_dim'],
-                                     attn_dim=input_attn_dim)
+                                     input_dim=encoder_params['hidden_dim'],
+                                     hidden_dim=decoder_params['hidden_dim'],
+                                     attn_dim=decoder_params['attn_dim'])
         self.hidden = None
 
     def init_hidden(self, batch_size):
