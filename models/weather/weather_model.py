@@ -114,7 +114,6 @@ class WeatherModel(nn.Module):
         de_out = []
         # parse decoder layer and get outputs recursively
         for t in range(self.window_out):
-
             beta_list = []
             for k in range(self.window_in):
                 beta = self.output_attn(en_out[:, k], de_hidden)

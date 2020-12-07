@@ -29,7 +29,7 @@ def run():
         'weather_model': WeatherModel,
     }
 
-    dump_file_dir = os.path.join(data_params['weather_raw_dir'], 'data_dump')
+    dump_file_dir = os.path.join('data', 'data_dump')
     months = pd.date_range(start=global_start_date, end=global_end_date, freq=str(1) + 'M')
     for i in range(0, len(months) - (data_length - stride), stride):
         start_date_str = '-'.join([str(months[i].year), str(months[i].month), '01'])

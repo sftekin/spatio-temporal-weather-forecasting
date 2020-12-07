@@ -62,6 +62,24 @@ def _find_best_model(model_name):
     return best_model, trainer
 
 
+def _load_model(experiment_num):
+    exp = f"results/exp_{experiment_num}"
+    loss_path = os.path.join(exp, 'loss.pkl')
+    model_path = os.path.join(exp, 'model.pkl')
+    trainer_path = os.path.join(exp, 'trainer.pkl')
+
+    with open(loss_path, 'rb') as f:
+        loss = pkl.load(f)
+
+    with open(model_path, 'rb') as f:
+        model = pkl.load(f)
+
+    with open(trainer_path, 'rb') as f:
+        trainer = pkl.load(f)
+
+    return model, trainer
+
+
 def _get_exp_count():
     save_dir = 'results'
     num_exp_dir = len(glob.glob(os.path.join(save_dir, 'exp_*')))
