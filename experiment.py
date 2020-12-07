@@ -6,7 +6,7 @@ from trainer import Trainer
 
 
 def train(model_name, model, batch_generator, trainer_params, device):
-    experiment_count = _get_exp_count()
+    experiment_count = _get_exp_count(model_name)
     save_dir = os.path.join('results', model_name, 'exp_' + str(experiment_count+1))
     os.makedirs(save_dir)
 
@@ -80,7 +80,7 @@ def _load_model(experiment_num):
     return model, trainer
 
 
-def _get_exp_count():
-    save_dir = 'results'
+def _get_exp_count(model_name):
+    save_dir = os.path.join('results', model_name)
     num_exp_dir = len(glob.glob(os.path.join(save_dir, 'exp_*')))
     return num_exp_dir
