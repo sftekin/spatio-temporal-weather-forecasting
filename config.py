@@ -1,7 +1,7 @@
 experiment_params = {
     "global_start_date": '2000-01-01',
     "global_end_date": '2008-12-31',
-    "data_step": 3,
+    "data_step": 6,
     "data_length": 24,
     "val_ratio": 0.1,
     "test_ratio": 0.1,
@@ -17,7 +17,7 @@ data_params = {
     "check_files": False,
     "features": ['d', 'cc', 'z', 'pv', 'r', 'ciwc', 'clwc', 'q', 'crwc', 'cswc', 't', 'u', 'v', 'w'],
     "atm_dim": -1,
-    "rebuild": False
+    "rebuild": True
 }
 
 batch_gen_params = {

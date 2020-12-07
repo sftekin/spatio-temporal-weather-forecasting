@@ -30,7 +30,6 @@ def run():
     }
 
     dump_file_dir = os.path.join(data_params['weather_raw_dir'], 'data_dump')
-
     months = pd.date_range(start=global_start_date, end=global_end_date, freq=str(1) + 'M')
     for i in range(0, len(months) - (data_length - stride), stride):
         start_date_str = '-'.join([str(months[i].year), str(months[i].month), '01'])
@@ -48,13 +47,11 @@ def run():
 
         model = model_dispatcher[model_name](device=device, **model_params[model_name])
 
-        train(model=model, batch_generator=batch_generator, trainer_params=trainer_params, device=device)
-        predict(batch_generator=batch_generator)
+        train(model_name=model_name, model=model, batch_generator=batch_generator, trainer_params=trainer_params, device=device)
+        predict(model_name=model_name, batch_generator=batch_generator)
 
-        break
-
-        # # remove dump directory
-        # shutil.rmtree(dump_file_dir)
+        # remove dump directory
+        shutil.rmtree(dump_file_dir)
 
 
 if __name__ == '__main__':
