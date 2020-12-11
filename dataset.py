@@ -5,7 +5,8 @@ from torch.utils.data import Dataset
 
 
 class WeatherDataset:
-    def __init__(self, weather_data, input_dim, output_dim, window_in_len, window_out_len, batch_size, normalizer):
+    def __init__(self, weather_data, input_dim, output_dim,
+                 window_in_len, window_out_len, batch_size, normalizer, shuffle):
         """
 
         :param input_dim:
@@ -13,6 +14,7 @@ class WeatherDataset:
         :param window_in_len:
         :param window_out_len:
         :param batch_size:
+        :param shuffle:
         """
         self.weather_data = weather_data
         self.input_dim = input_dim
@@ -23,6 +25,7 @@ class WeatherDataset:
         self.batch_size = batch_size
         self.num_iter = 0
         self.normalizer = normalizer
+        self.shuffle = shuffle
 
     def next(self):
         """
@@ -66,7 +69,7 @@ class WeatherDataset:
         """
         total_frame = len(in_data)
 
-        stacked_data = []
+        all_data = []
         batch = []
         j = 0
         for i in range(total_frame-self.total_window_len):
@@ -74,11 +77,17 @@ class WeatherDataset:
                 batch.append(in_data[i:i+self.total_window_len])
                 j += 1
             else:
-                stacked_data.append(np.stack(batch, axis=0))
+                all_data.append(np.stack(batch, axis=0))
                 batch = []
                 j = 0
 
-        return stacked_data
+        if self.shuffle:
+            all_data = np.stack(all_data)
+            all_data = all_data.reshape(len(all_data)*self.batch_size, -1)
+            all_data = all_data[np.random.permutation(len(all_data))]
+            all_data = all_data.reshape(-1, self.batch_size, all_data.shape[-1])
+
+        return all_data
 
     def create_flow_mat(self, y):
         """

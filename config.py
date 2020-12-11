@@ -26,11 +26,12 @@ batch_gen_params = {
     "window_in_len": 10,
     "window_out_len": 10,
     "batch_size": 8,
+    "shuffle": True,
 }
 
 trainer_params = {
     "num_epochs": 50,
-    "learning_rate": 0.0003,
+    "learning_rate": 0.0007,
     "clip": 5,
     "early_stop_tolerance": 4
 }

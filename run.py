@@ -35,6 +35,7 @@ def run():
         start_date_str = '-'.join([str(months[i].year), str(months[i].month), '01'])
         start_date = pd.to_datetime(start_date_str)
         end_date = start_date + pd.DateOffset(months=data_length) - pd.DateOffset(hours=1)
+        date_range_str = start_date_str + end_date.strftime("%Y-%m-%d")
 
         data_creator = DataCreator(start_date=start_date, end_date=end_date, **data_params)
         weather_data = data_creator.create_data()
@@ -47,7 +48,12 @@ def run():
 
         model = model_dispatcher[model_name](device=device, **model_params[model_name])
 
-        train(model_name=model_name, model=model, batch_generator=batch_generator, trainer_params=trainer_params, device=device)
+        train(model_name=model_name,
+              model=model,
+              batch_generator=batch_generator,
+              trainer_params=trainer_params,
+              date_r=date_range_str,
+              device=device)
         predict(model_name=model_name, batch_generator=batch_generator)
 
         # remove dump directory

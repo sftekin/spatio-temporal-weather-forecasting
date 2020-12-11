@@ -5,7 +5,7 @@ import pickle as pkl
 from trainer import Trainer
 
 
-def train(model_name, model, batch_generator, trainer_params, device):
+def train(model_name, model, batch_generator, trainer_params, date_r, device):
     experiment_count = _get_exp_count(model_name)
     save_dir = os.path.join('results', model_name, 'exp_' + str(experiment_count+1))
     os.makedirs(save_dir)
@@ -18,7 +18,7 @@ def train(model_name, model, batch_generator, trainer_params, device):
     train_val_loss = trainer.fit(model, batch_generator)
     test_loss = trainer.transform(model, batch_generator)
 
-    train_val_loss += (test_loss,)
+    train_val_loss += (test_loss, date_r)
 
     for path, obj in zip([loss_save_path, model_save_path, trainer_save_path],
                          [train_val_loss, model, trainer]):
