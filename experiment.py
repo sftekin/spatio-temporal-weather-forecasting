@@ -50,7 +50,7 @@ def _find_best_model(model_name):
         try:
             with open(loss_path, 'rb') as f:
                 loss = pkl.load(f)
-            best_eval_loss = loss[-1]
+            best_eval_loss = loss[2]
             if best_eval_loss < best_loss:
                 best_loss = best_eval_loss
                 with open(model_path, 'rb') as f:
