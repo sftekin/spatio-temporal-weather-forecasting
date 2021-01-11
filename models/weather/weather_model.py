@@ -1,148 +1,169 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from models.weather.attention import Attention
-from models.weather.f_conv_lstm import FConvLSTMCell
-from models.weather.input_cnn import InputCNN
+from models.baseline.convlstm import ConvLSTMCell
 
 
 class WeatherModel(nn.Module):
-    def __init__(self, window_in, window_out, input_size, num_series,
-                 selected_dim, encoder_params, decoder_params, device):
-        super().__init__()
 
-        self.height, self.width = input_size
-        self.selected_dim = selected_dim
+    def __init__(self, input_size, window_in, window_out, num_layers, selected_dim,
+                 encoder_params, decoder_params, attention_params, device):
+        nn.Module.__init__(self)
+
+        self.device = device
+        self.input_size = input_size
+        self.height, self.width = self.input_size
+
         self.window_in = window_in
         self.window_out = window_out
-        self.num_series = num_series
-
+        self.num_layers = num_layers
         self.encoder_params = encoder_params
+        self.attention_params = attention_params
         self.decoder_params = decoder_params
-        self.device = device
+        self.selected_dim = selected_dim
+
+        # self.input_cnn = InputCNN(in_channels=self.window_in)
+
+        self.input_attn = Attention(input_size=attention_params["input_size"],
+                                    hidden_size=(self.height, self.width),
+                                    input_dim=attention_params["input_dim"],
+                                    hidden_dim=attention_params["hidden_dim"],
+                                    attn_dim=attention_params["attn_dim"])
+
+        self.temporal_cnn = nn.Sequential(
+            nn.Conv2d(1+self.window_in, 1, kernel_size=1),
+            nn.ReLU(inplace=True),
+        )
+
+        # define encoder
+        self.encoder = self.__define_block(encoder_params)
+
+        # define decoder
+        self.decoder = self.__define_block(decoder_params)
+
+        self.hidden = None
         self.is_trainable = True
 
-        self.input_cnn = InputCNN(in_channels=self.window_in)
-
-        self.encoder = FConvLSTMCell(input_size=(self.height, self.width),
-                                     input_dim=self.num_series,
-                                     hidden_dim=encoder_params['hidden_dim'],
-                                     flow_dim=encoder_params['flow_dim'],
-                                     kernel_size=encoder_params['kernel_size'],
-                                     bias=encoder_params['bias'],
-                                     padding=encoder_params['padding'],
-                                     device=self.device)
-
-        self.input_attn = Attention(input_size=encoder_params['attn_input_size'],
-                                    hidden_size=(self.height, self.width),
-                                    input_dim=encoder_params['attn_input_dim'],
-                                    hidden_dim=encoder_params['hidden_dim'],
-                                    attn_dim=encoder_params['attn_dim'])
-
-        self.decoder = FConvLSTMCell(input_size=(self.height, self.width),
-                                     input_dim=decoder_params['input_dim'],
-                                     hidden_dim=encoder_params['hidden_dim'],
-                                     flow_dim=decoder_params['flow_dim'],
-                                     kernel_size=decoder_params['kernel_size'],
-                                     bias=decoder_params['bias'],
-                                     padding=decoder_params['padding'],
-                                     device=device)
-
-        self.out_conv = nn.Conv2d(in_channels=encoder_params['hidden_dim'],
-                                  out_channels=1,
-                                  kernel_size=3,
-                                  padding=1,
-                                  bias=False)
-
-        self.output_attn = Attention(input_size=(self.height, self.width),
-                                     hidden_size=(self.height, self.width),
-                                     input_dim=encoder_params['hidden_dim'],
-                                     hidden_dim=decoder_params['hidden_dim'],
-                                     attn_dim=decoder_params['attn_dim'])
-        self.hidden = None
-
     def init_hidden(self, batch_size):
-        hidden = self.encoder.init_hidden(batch_size)
-        return hidden
+        init_states = []
+        for i in range(self.num_layers):
+            init_states.append(self.encoder[i].init_hidden(batch_size))
+        return init_states
 
-    def forward(self, x, f_x, hidden):
-        """
+    def __define_block(self, block_params):
+        input_dim = block_params['input_dim']
+        hidden_dims = block_params['hidden_dims']
+        kernel_size = block_params['kernel_size']
+        bias = block_params['bias']
+        peephole_con = block_params['peephole_con']
 
-        :param x: (b, t, d, m, n)
-        :type x:
-        :param f_x: (b, t, 4, m, n)
-        :type f_x:
-        :param hidden: [(b, d', m, n), (b, d', m, n)]
-        :type hidden:
-        :return:
-        :rtype:
+        # Defining block
+        cell_list = []
+        for i in range(0, self.num_layers):
+            cur_input_dim = input_dim if i == 0 else hidden_dims[i - 1]
+            cell_list += [self.__create_cell_unit(cur_input_dim,
+                                                  hidden_dims[i],
+                                                  kernel_size[i],
+                                                  bias,
+                                                  peephole_con)]
+        block = nn.ModuleList(cell_list)
+
+        return block
+
+    def __create_cell_unit(self, cur_input_dim, hidden_dim, kernel_size, bias, peephole_con):
+        cell_unit = ConvLSTMCell(input_size=(self.height, self.width),
+                                 input_dim=cur_input_dim,
+                                 hidden_dim=hidden_dim,
+                                 kernel_size=kernel_size,
+                                 bias=bias,
+                                 device=self.device,
+                                 peephole_con=peephole_con)
+        return cell_unit
+
+    def forward(self, x, hidden, **kwargs):
         """
-        batch_size, win_len, dim_len, height, width = x.shape
+        :param input_tensor: 5-D tensor of shape (b, t, m, n, d)
+        :param hidden:
+        :return: (b, t, m, n, d)
+        """
+        b, t, d, m, n = x.shape
+
+        # forward encoder
+        _, cur_states = self.__forward_block(x, hidden, 'encoder', return_all_layers=True)
+
+        # reverse the state list
+        cur_states = [cur_states[i - 1] for i in range(len(cur_states), 0, -1)]
+
+        # forward decoder block
+        decoder_input = torch.zeros((b, self.window_out,
+                                     self.decoder_params['input_dim'], m, n)).to(self.device)
+        dec_output, _ = self.__forward_block(decoder_input, cur_states, 'decoder',
+                                             return_all_layers=False, y_prev=x[:, :, [self.selected_dim]])
+
+        return dec_output
+
+    def __forward_block(self, input_tensor, hidden_state, block_name, return_all_layers, y_prev=None):
+        """
+        :param input_tensor:
+        :param hidden_state:
+        :param return_all_layers:
+        :return: [(B, T, D, M, N), ...], [(B, D, M, N), ...] if return_all_layers false
+        returns the last element of the list
+        """
+        block = getattr(self, block_name)
+        layer_output_list = []
+        layer_state_list = []
+
+        b, seq_len, dim_len, height, width = input_tensor.shape
+
+        x = input_tensor
+        for layer_idx in range(self.num_layers):
+            h, c = hidden_state[layer_idx]
+            output_inner = []
+            for t in range(seq_len):
+
+                if block_name == 'encoder' and layer_idx == 0:
+                    x = self.__forward_attn(x, hid=(h, c))
+
+                h, c = block[layer_idx](input_tensor=x[:, t, :, :, :],
+                                        cur_state=[h, c])
+
+                if block_name == 'decoder' and layer_idx == self.num_layers - 1:
+                    y_prev = torch.cat([y_prev, h], dim=1)
+                    h = self.temporal_cnn(y_prev)
+                    y_prev = y_prev[:, 1:]
+
+                output_inner.append(h)
+
+            layer_output = torch.stack(output_inner, dim=1)
+            x = layer_output
+
+            layer_output_list.append(layer_output)
+            layer_state_list.append([h, c])
+
+        if not return_all_layers:
+            layer_output_list = layer_output_list[-1]
+            layer_state_list = layer_state_list[-1]
+
+        return layer_output_list, layer_state_list
+
+    def __forward_attn(self, x, hid):
+        b, t, d, m, n = x.shape
 
         # calculate input attention
         alpha_list = []
-        for k in range(dim_len):
+        for k in range(d):
             # dim(x_k): (b, 256, m', n')
-            x_k = self.input_cnn(x[:, :, k])
+            x_k = x[:, :, k]
 
             # dim(alpha): (B, 1)
-            alpha = self.input_attn(x_k, hidden)
+            alpha = self.input_attn(x_k, hid)
             alpha_list.append(alpha)
 
         # dim(alpha_tensor): (B, D)
-        alpha_tensor = torch.cat(alpha_list, dim=1).squeeze()
-        alpha_tensor = F.softmax(alpha_tensor, dim=1)
+        alpha_tensor = torch.cat(alpha_list, dim=1)
+        alpha_tensor = torch.exp(alpha_tensor) / torch.max(torch.exp(alpha_tensor))
+        x_tilda = x * alpha_tensor.unsqueeze(1)
 
-        # calculate encoder output
-        en_out = []
-        for t in range(self.window_in):
-            x_t = x[:, t].view(batch_size, dim_len, -1)
-            x_tilda = x_t * alpha_tensor.unsqueeze(2)
-            x_tilda = x_tilda.view(batch_size, dim_len, height, width)
-
-            hidden = self.encoder(input_tensor=x_tilda,
-                                  cur_state=hidden,
-                                  flow_tensor=f_x[:, t])
-
-            en_out.append(hidden[0])
-        en_out = torch.stack(en_out, dim=1)
-
-        de_hidden = self.decoder.init_hidden(batch_size)
-        de_in = x[:, -1, [self.selected_dim]]
-        f_y = f_x[:, -1]
-        de_out = []
-        # parse decoder layer and get outputs recursively
-        for t in range(self.window_out):
-            beta_list = []
-            for k in range(self.window_in):
-                beta = self.output_attn(en_out[:, k], de_hidden)
-                beta_list.append(beta)
-            # dim(beta_tensor): (B, T)
-            beta_tensor = F.softmax(torch.cat(beta_list, dim=1).squeeze(), dim=1)
-
-            en_dim = en_out.shape[2]
-            context_t = torch.sum(en_out.view(batch_size, self.window_in, -1) * beta_tensor.unsqueeze(2), dim=1)
-            context_t = context_t.view(batch_size, en_dim, self.decoder.height, self.decoder.width)
-
-            de_hidden = self.decoder(torch.cat([context_t, de_in], dim=1), de_hidden, f_y)
-            conv_out = self.out_conv(de_hidden[0])
-
-            f_y = self.create_flow_mat(conv_out, de_in)
-            de_out.append(conv_out)
-            de_in = conv_out
-
-        de_out = torch.stack(de_out, dim=1)
-
-        return de_out
-
-    @staticmethod
-    def create_flow_mat(y, y_prev):
-        batch_dim, d_dim, height, width = y.shape
-        y_t = y[..., 1:height - 1, 1:width - 1]
-        f_a = y_t - y_prev[..., :height - 2, :width - 2]
-        f_b = y_t - y_prev[..., 2:height, 2:width]
-        f_c = y_t - y_prev[..., 2:height, :width - 2]
-        f_d = y_t - y_prev[..., :height - 2, 2:width]
-        f = torch.cat([f_a, f_b, f_c, f_d], dim=1)
-        return f
+        return x_tilda
