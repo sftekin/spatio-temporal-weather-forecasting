@@ -1,5 +1,6 @@
 import os
 import glob
+import torch
 import pickle as pkl
 
 from trainer import Trainer
@@ -26,9 +27,9 @@ def train(model_name, model, batch_generator, trainer_params, date_r, device):
             pkl.dump(obj, file)
 
 
-def predict(model_name, batch_generator):
+def predict(model_name, batch_generator, exp_num=None):
     # find the best model
-    model, trainer = _find_best_model(model_name)
+    model, trainer = _find_best_model(model_name, exp_num=exp_num)
 
 #    trainer.fit_batch_generator(batch_generator)
     predict_loss = trainer.transform(model, batch_generator)
@@ -36,29 +37,42 @@ def predict(model_name, batch_generator):
     return predict_loss
 
 
-def _find_best_model(model_name):
+def _find_best_model(model_name, exp_num=None):
     print("Selecting best model...")
     exps_dir = os.path.join('results', model_name)
 
-    best_model = None
-    best_loss = 1e6
-    for exp in glob.glob(os.path.join(exps_dir, 'exp_*')):
-        loss_path = os.path.join(exp, 'loss.pkl')
-        model_path = os.path.join(exp, 'model.pkl')
-        trainer_path = os.path.join(exp, 'trainer.pkl')
-        
-        try:
-            with open(loss_path, 'rb') as f:
-                loss = pkl.load(f)
-            best_eval_loss = loss[2]
-            if best_eval_loss < best_loss:
-                best_loss = best_eval_loss
-                with open(model_path, 'rb') as f:
-                    best_model = pkl.load(f)
-                with open(trainer_path, 'rb') as f:
-                    trainer = pkl.load(f)
-        except Exception as e:
-            pass
+    if exp_num:
+        exps_dir = os.path.join(exps_dir, "exp_" + str(exp_num))
+        loss_path = os.path.join(exps_dir, 'loss.pkl')
+        model_path = os.path.join(exps_dir, 'model.pkl')
+        trainer_path = os.path.join(exps_dir, 'trainer.pkl')
+
+        with open(model_path, 'rb') as f:
+            best_model = pkl.load(f)
+
+        with open(trainer_path, "rb") as f:
+            trainer = pkl.load(f)
+
+    else:
+        best_model = None
+        best_loss = 1e6
+        for exp in glob.glob(os.path.join(exps_dir, 'exp_*')):
+            loss_path = os.path.join(exp, 'loss.pkl')
+            model_path = os.path.join(exp, 'model.pkl')
+            trainer_path = os.path.join(exp, 'trainer.pkl')
+
+            try:
+                with open(loss_path, 'rb') as f:
+                    loss = pkl.load(f)
+                best_eval_loss = loss[2]
+                if best_eval_loss < best_loss:
+                    best_loss = best_eval_loss
+                    with open(model_path, 'rb') as f:
+                        best_model = pkl.load(f)
+                    with open(trainer_path, 'rb') as f:
+                        trainer = pkl.load(f)
+            except Exception as e:
+                pass
     return best_model, trainer
 
 
