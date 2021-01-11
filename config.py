@@ -17,7 +17,7 @@ data_params = {
     "check_files": False,
     "features": ['d', 'cc', 'z', 'pv', 'r', 'ciwc', 'clwc', 'q', 'crwc', 'cswc', 't', 'u', 'v', 'w'],
     "atm_dim": -1,
-    "rebuild": True
+    "rebuild": False
 }
 
 batch_gen_params = {
@@ -30,8 +30,8 @@ batch_gen_params = {
 }
 
 trainer_params = {
-    "num_epochs": 50,
-    "learning_rate": 0.0007,
+    "num_epochs": 100,
+    "learning_rate": 0.001,
     "clip": 5,
     "early_stop_tolerance": 4
 }
@@ -72,26 +72,27 @@ model_params = {
         "input_size": (61, 121),
         "window_in": 10,
         "window_out": 10,
-        "num_series": 9,
+        "num_layers": 3,
         "selected_dim": 5,
+        "attention_params": {
+            "input_size": (61, 121),
+            "input_dim": 10,
+            "hidden_dim": 1,
+            "attn_dim": 300
+        },
         "encoder_params": {
-            "attn_input_size": (30, 60),
-            "attn_dim": 100,
-            "attn_input_dim": 128,
-            "hidden_dim": 16,
-            "flow_dim": 4,
-            "kernel_size": 3,
+            "input_dim": 9,
+            "hidden_dims": [1, 16, 32],
+            "kernel_size": [3, 3, 3],
             "bias": False,
-            "padding": 2,
+            "peephole_con": False
         },
         "decoder_params": {
-            "attn_dim": 100,
-            "input_dim": 17,
-            "hidden_dim": 16,
-            "flow_dim": 4,
-            "kernel_size": 3,
-            "padding": 2,
-            "bias": False
+            "input_dim": 32,
+            "hidden_dims": [32, 16, 1],
+            "kernel_size": [3, 3, 3],
+            "bias": False,
+            "peephole_con": False
         }
     }
 }
