@@ -31,7 +31,7 @@ batch_gen_params = {
 
 trainer_params = {
     "num_epochs": 100,
-    "learning_rate": 0.001,
+    "learning_rate": 0.0007,
     "clip": 5,
     "early_stop_tolerance": 4
 }

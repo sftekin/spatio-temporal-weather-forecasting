@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 
+import torch.nn.functional as F
 from models.weather.attention import Attention
 from models.baseline.convlstm import ConvLSTMCell
 
@@ -31,10 +32,10 @@ class WeatherModel(nn.Module):
                                     hidden_dim=attention_params["hidden_dim"],
                                     attn_dim=attention_params["attn_dim"])
 
-        self.temporal_cnn = nn.Sequential(
-            nn.Conv2d(1+self.window_in, 1, kernel_size=1),
-            nn.ReLU(inplace=True),
-        )
+        # self.temporal_cnn = nn.Sequential(
+        #     nn.Conv2d(1+self.window_in, 1, kernel_size=1),
+        #     nn.ReLU(inplace=True),
+        # )
 
         # define encoder
         self.encoder = self.__define_block(encoder_params)
@@ -99,7 +100,7 @@ class WeatherModel(nn.Module):
         decoder_input = torch.zeros((b, self.window_out,
                                      self.decoder_params['input_dim'], m, n)).to(self.device)
         dec_output, _ = self.__forward_block(decoder_input, cur_states, 'decoder',
-                                             return_all_layers=False, y_prev=x[:, :, [self.selected_dim]])
+                                             return_all_layers=False, y_prev=x[:, :, self.selected_dim])
 
         return dec_output
 
@@ -129,10 +130,10 @@ class WeatherModel(nn.Module):
                 h, c = block[layer_idx](input_tensor=x[:, t, :, :, :],
                                         cur_state=[h, c])
 
-                if block_name == 'decoder' and layer_idx == self.num_layers - 1:
-                    y_prev = torch.cat([y_prev, h], dim=1)
-                    h = self.temporal_cnn(y_prev)
-                    y_prev = y_prev[:, 1:]
+                # if block_name == 'decoder' and layer_idx == self.num_layers - 1:
+                #     y_prev = torch.cat([y_prev, h], dim=1)
+                #     h = self.temporal_cnn(y_prev)
+                #     y_prev = y_prev[:, 1:]
 
                 output_inner.append(h)
 
@@ -163,7 +164,7 @@ class WeatherModel(nn.Module):
 
         # dim(alpha_tensor): (B, D)
         alpha_tensor = torch.cat(alpha_list, dim=1)
-        alpha_tensor = torch.exp(alpha_tensor) / torch.max(torch.exp(alpha_tensor))
+        alpha_tensor = F.softmax(alpha_tensor, dim=1)
         x_tilda = x * alpha_tensor.unsqueeze(1)
 
         return x_tilda
