@@ -97,7 +97,7 @@ class WeatherModel(nn.Module):
         cur_states = [cur_states[i - 1] for i in range(len(cur_states), 0, -1)]
 
         # forward decoder block
-        dec_output = self.__forward_decoder(x[:, t, self.selected_dim], cur_states)
+        dec_output = self.__forward_decoder(x[:, -1, self.selected_dim], cur_states)
 
         return dec_output
 
