@@ -7,9 +7,11 @@ from copy import deepcopy
 
 class Trainer:
 
-    def __init__(self, num_epochs, early_stop_tolerance, clip, learning_rate, device):
+    def __init__(self, num_epochs, early_stop_tolerance, clip, learning_rate, weight_decay, momentum, device):
         self.num_epochs = num_epochs
         self.clip = clip
+        self.momentum = momentum
+        self.weight_decay = weight_decay
         self.learning_rate = learning_rate
         self.tolerance = early_stop_tolerance
         self.device = torch.device(device)
@@ -20,8 +22,12 @@ class Trainer:
         model.train()
 
         if model.is_trainable:
-            optimizer = optim.Adam(model.parameters(),
-                                   lr=self.learning_rate)
+            # optimizer = optim.Adam(model.parameters(),
+            #                        lr=self.learning_rate)
+            optimizer = optim.SGD(model.parameters(),
+                                  lr=self.learning_rate,
+                                  momentum=self.momentum,
+                                  )
         else:
             optimizer = None
 
