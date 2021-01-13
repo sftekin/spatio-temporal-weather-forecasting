@@ -77,11 +77,13 @@ model_params = {
         "window_out": 10,
         "num_layers": 3,
         "selected_dim": 5,
-        "attention_params": {
-            "input_size": (61, 121),
+        "input_attn_params": {
             "input_dim": 10,
             "hidden_dim": 1,
-            "attn_dim": 300
+        },
+        "temporal_attn_params": {
+            "input_dim": 1,
+            "hidden_dim": 32,
         },
         "encoder_params": {
             "input_dim": 9,
@@ -91,7 +93,7 @@ model_params = {
             "peephole_con": False
         },
         "decoder_params": {
-            "input_dim": 32,
+            "input_dim": 1,
             "hidden_dims": [32, 16, 1],
             "kernel_size": [3, 3, 3],
             "bias": False,

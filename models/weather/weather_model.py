@@ -9,7 +9,7 @@ from models.baseline.convlstm import ConvLSTMCell
 class WeatherModel(nn.Module):
 
     def __init__(self, input_size, window_in, window_out, num_layers, selected_dim,
-                 encoder_params, decoder_params, attention_params, device):
+                 encoder_params, decoder_params, input_attn_params, temporal_attn_params, device):
         nn.Module.__init__(self)
 
         self.device = device
@@ -20,22 +20,18 @@ class WeatherModel(nn.Module):
         self.window_out = window_out
         self.num_layers = num_layers
         self.encoder_params = encoder_params
-        self.attention_params = attention_params
+        self.input_attn_params = input_attn_params
+        self.temporal_attn_params = temporal_attn_params
         self.decoder_params = decoder_params
         self.selected_dim = selected_dim
 
         # self.input_cnn = InputCNN(in_channels=self.window_in)
 
-        self.input_attn = Attention(input_size=attention_params["input_size"],
-                                    hidden_size=(self.height, self.width),
-                                    input_dim=attention_params["input_dim"],
-                                    hidden_dim=attention_params["hidden_dim"],
-                                    attn_dim=attention_params["attn_dim"])
+        self.input_attn = Attention(input_dim=input_attn_params["input_dim"],
+                                    hidden_dim=input_attn_params["hidden_dim"])
 
-        # self.temporal_cnn = nn.Sequential(
-        #     nn.Conv2d(1+self.window_in, 1, kernel_size=1),
-        #     nn.ReLU(inplace=True),
-        # )
+        self.temporal_attn = Attention(input_dim=temporal_attn_params["input_dim"],
+                                       hidden_dim=temporal_attn_params["hidden_dim"])
 
         # define encoder
         self.encoder = self.__define_block(encoder_params)
@@ -88,8 +84,6 @@ class WeatherModel(nn.Module):
         :param hidden:
         :return: (b, t, m, n, d)
         """
-        b, t, d, m, n = x.shape
-
         # forward encoder
         _, cur_states = self.__forward_encoder(x, hidden)
 
@@ -97,7 +91,7 @@ class WeatherModel(nn.Module):
         cur_states = [cur_states[i - 1] for i in range(len(cur_states), 0, -1)]
 
         # forward decoder block
-        dec_output = self.__forward_decoder(x[:, -1, self.selected_dim], cur_states)
+        dec_output = self.__forward_decoder(x[:, [-1], self.selected_dim], cur_states)
 
         return dec_output
 
@@ -108,22 +102,24 @@ class WeatherModel(nn.Module):
 
         for layer_idx in range(self.num_layers):
             h, c = hidden[layer_idx]
-            output_inner = []
+            h_inner = []
+            c_inner = []
             for t in range(seq_len):
 
                 if layer_idx == 0:
-                    x = self.__forward_input_attn(x, hid=(h, c))
+                    x = self.__forward_input_attn(x, hidden=(h, c))
 
                 h, c = self.encoder[layer_idx](input_tensor=x[:, t, :, :, :],
                                                cur_state=[h, c])
+                c_inner.append(c)
+                h_inner.append(h)
 
-                output_inner.append(h)
+            layer_h = torch.stack(h_inner, dim=1)
+            layer_c = torch.stack(c_inner, dim=1)
+            x = layer_h
 
-            layer_output = torch.stack(output_inner, dim=1)
-            x = layer_output
-
-            layer_output_list.append(layer_output)
-            layer_state_list.append([h, c])
+            layer_output_list.append(layer_h)
+            layer_state_list.append([layer_h, layer_c])
 
         return layer_output_list, layer_state_list
 
@@ -134,12 +130,22 @@ class WeatherModel(nn.Module):
             for layer_idx in range(self.num_layers):
                 h, c = hidden[layer_idx]
 
-                # if layer_idx == 0:
-                #     y_next = self.__forward_temporal_attn(y_next, hid=(h, c))
+                if layer_idx == 0:
+                    h_cur, c_cur = self.__forward_temporal_attn(y_next, hidden=(h, c))
+                else:
+                    h_cur = h[:, -1]
+                    c_cur = c[:, -1]
 
-                h, c = self.encoder[layer_idx](input_tensor=y_next,
-                                               cur_state=[h, c])
-                y_next = h
+                h_cur, c_cur = self.decoder[layer_idx](input_tensor=y_next,
+                                                       cur_state=[h_cur, c_cur])
+                y_next = h_cur
+
+                h = torch.cat([h, h_cur.unsqueeze(1)], dim=1)
+                h = h[:, 1:]
+
+                c = torch.cat([c, c_cur.unsqueeze(1)], dim=1)
+                c = c[:, 1:]
+
                 hidden[layer_idx] = (h, c)
 
             y_pre.append(y_next)
@@ -148,17 +154,17 @@ class WeatherModel(nn.Module):
 
         return y_pre
 
-    def __forward_input_attn(self, x, hid):
-        b, t, d, m, n = x.shape
+    def __forward_input_attn(self, x, hidden):
+        d_dim = x.shape[2]
 
         # calculate input attention
         alpha_list = []
-        for k in range(d):
+        for k in range(d_dim):
             # dim(x_k): (b, 256, m', n')
             x_k = x[:, :, k]
 
             # dim(alpha): (B, 1)
-            alpha = self.input_attn(x_k, hid)
+            alpha = self.input_attn(x_k, hidden)
             alpha_list.append(alpha)
 
         # dim(alpha_tensor): (B, D)
@@ -168,3 +174,19 @@ class WeatherModel(nn.Module):
 
         return x_tilda
 
+    def __forward_temporal_attn(self, y_next, hidden):
+        h, c = hidden
+        seq_len = h.shape[1]
+
+        beta_list = []
+        for t in range(seq_len):
+            hid_t = (h[:, t], c[:, t])
+
+            beta = self.temporal_attn(y_next, hid_t)
+            beta_list.append(beta)
+
+        beta_tensor = torch.cat(beta_list, dim=1)
+        beta_tensor = F.softmax(beta_tensor, dim=1)
+        h_tilda = torch.sum(h * beta_tensor.unsqueeze(2), dim=1)
+
+        return h_tilda, c[:, -1]
