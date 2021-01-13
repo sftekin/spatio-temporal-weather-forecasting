@@ -91,49 +91,31 @@ class WeatherModel(nn.Module):
         b, t, d, m, n = x.shape
 
         # forward encoder
-        _, cur_states = self.__forward_block(x, hidden, 'encoder', return_all_layers=True)
+        _, cur_states = self.__forward_encoder(x, hidden)
 
         # reverse the state list
         cur_states = [cur_states[i - 1] for i in range(len(cur_states), 0, -1)]
 
         # forward decoder block
-        decoder_input = torch.zeros((b, self.window_out,
-                                     self.decoder_params['input_dim'], m, n)).to(self.device)
-        dec_output, _ = self.__forward_block(decoder_input, cur_states, 'decoder',
-                                             return_all_layers=False, y_prev=x[:, :, self.selected_dim])
+        dec_output = self.__forward_decoder(x[:, t, self.selected_dim], cur_states)
 
         return dec_output
 
-    def __forward_block(self, input_tensor, hidden_state, block_name, return_all_layers, y_prev=None):
-        """
-        :param input_tensor:
-        :param hidden_state:
-        :param return_all_layers:
-        :return: [(B, T, D, M, N), ...], [(B, D, M, N), ...] if return_all_layers false
-        returns the last element of the list
-        """
-        block = getattr(self, block_name)
+    def __forward_encoder(self, x, hidden):
         layer_output_list = []
         layer_state_list = []
+        b, seq_len, dim_len, height, width = x.shape
 
-        b, seq_len, dim_len, height, width = input_tensor.shape
-
-        x = input_tensor
         for layer_idx in range(self.num_layers):
-            h, c = hidden_state[layer_idx]
+            h, c = hidden[layer_idx]
             output_inner = []
             for t in range(seq_len):
 
-                if block_name == 'encoder' and layer_idx == 0:
-                    x = self.__forward_attn(x, hid=(h, c))
+                if layer_idx == 0:
+                    x = self.__forward_input_attn(x, hid=(h, c))
 
-                h, c = block[layer_idx](input_tensor=x[:, t, :, :, :],
-                                        cur_state=[h, c])
-
-                # if block_name == 'decoder' and layer_idx == self.num_layers - 1:
-                #     y_prev = torch.cat([y_prev, h], dim=1)
-                #     h = self.temporal_cnn(y_prev)
-                #     y_prev = y_prev[:, 1:]
+                h, c = self.encoder[layer_idx](input_tensor=x[:, t, :, :, :],
+                                               cur_state=[h, c])
 
                 output_inner.append(h)
 
@@ -143,28 +125,25 @@ class WeatherModel(nn.Module):
             layer_output_list.append(layer_output)
             layer_state_list.append([h, c])
 
-        if not return_all_layers:
-            layer_output_list = layer_output_list[-1]
-            layer_state_list = layer_state_list[-1]
-
         return layer_output_list, layer_state_list
 
-    def __forward_attn(self, x, hid):
-        b, t, d, m, n = x.shape
+    def __forward_decoder(self, y_t, hidden):
+        y_pre = []
+        y_next = y_t
+        for t in range(self.window_out):
+            for layer_idx in range(self.num_layers):
+                h, c = hidden[layer_idx]
 
-        # calculate input attention
-        alpha_list = []
-        for k in range(d):
-            # dim(x_k): (b, 256, m', n')
-            x_k = x[:, :, k]
+                # if layer_idx == 0:
+                #     y_next = self.__forward_temporal_attn(y_next, hid=(h, c))
 
-            # dim(alpha): (B, 1)
-            alpha = self.input_attn(x_k, hid)
-            alpha_list.append(alpha)
+                h, c = self.encoder[layer_idx](input_tensor=y_next,
+                                               cur_state=[h, c])
+                y_next = h
+                hidden[layer_idx] = (h, c)
 
-        # dim(alpha_tensor): (B, D)
-        alpha_tensor = torch.cat(alpha_list, dim=1)
-        alpha_tensor = F.softmax(alpha_tensor, dim=1)
-        x_tilda = x * alpha_tensor.unsqueeze(1)
+            y_pre.append(y_next)
 
-        return x_tilda
+        y_pre = torch.stack(y_pre, dim=1)
+
+        return y_pre

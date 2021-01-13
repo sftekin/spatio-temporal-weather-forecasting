@@ -32,6 +32,7 @@ batch_gen_params = {
 trainer_params = {
     "num_epochs": 100,
     "momentum": 0.7,
+    "optimizer": "adam",
     "weight_decay": 0.00023,
     "learning_rate": 0.0007,
     "clip": 5,
