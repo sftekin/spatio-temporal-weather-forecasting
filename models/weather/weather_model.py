@@ -147,3 +147,24 @@ class WeatherModel(nn.Module):
         y_pre = torch.stack(y_pre, dim=1)
 
         return y_pre
+
+    def __forward_input_attn(self, x, hid):
+        b, t, d, m, n = x.shape
+
+        # calculate input attention
+        alpha_list = []
+        for k in range(d):
+            # dim(x_k): (b, 256, m', n')
+            x_k = x[:, :, k]
+
+            # dim(alpha): (B, 1)
+            alpha = self.input_attn(x_k, hid)
+            alpha_list.append(alpha)
+
+        # dim(alpha_tensor): (B, D)
+        alpha_tensor = torch.cat(alpha_list, dim=1)
+        alpha_tensor = F.softmax(alpha_tensor, dim=1)
+        x_tilda = x * alpha_tensor.unsqueeze(1)
+
+        return x_tilda
+
