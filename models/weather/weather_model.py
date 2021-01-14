@@ -104,10 +104,12 @@ class WeatherModel(nn.Module):
             h, c = hidden[layer_idx]
             h_inner = []
             c_inner = []
+            alphas = []
             for t in range(seq_len):
 
                 if layer_idx == 0:
-                    x = self.__forward_input_attn(x, hidden=(h, c))
+                    x, alpha = self.__forward_input_attn(x, hidden=(h, c))
+                    alphas.append(alpha)
 
                 h, c = self.encoder[layer_idx](input_tensor=x[:, t, :, :, :],
                                                cur_state=[h, c])
@@ -172,7 +174,7 @@ class WeatherModel(nn.Module):
         alpha_tensor = F.softmax(alpha_tensor, dim=1)
         x_tilda = x * alpha_tensor.unsqueeze(1)
 
-        return x_tilda
+        return x_tilda, alpha_tensor
 
     def __forward_temporal_attn(self, y_next, hidden):
         h, c = hidden

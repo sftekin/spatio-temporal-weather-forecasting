@@ -1,0 +1,60 @@
+## X
+
+fig, axs = plt.subplots(1, 10, figsize=(20, 3))
+images = []
+for t in range(10):
+    images.append(axs[t].imshow(x.detach().numpy()[0, t, 5, :, :], cmap=plt.get_cmap("coolwarm")))
+    axs[t].set_title(f"t={t}")
+    axs[t].axis("off")
+plt.savefig("figures/x.png", bbox_inches="tight", pad_inches=0.01, dpi=300)
+
+
+## X FLOW
+
+arrw_strd = 1
+f = f_x[0, :, :, :, 5, :]
+seq_len, m, n, _ = f.shape
+X, Y = np.meshgrid(np.arange(0, n), np.arange(0, m))
+
+fig, axs = plt.subplots(1, seq_len, figsize=(20, 1))
+for t in range(seq_len):
+    U = f[t, :, :, 0]
+    V = f[t, :, :, 1]
+
+    q = axs[t].quiver(X[::arrw_strd, ::arrw_strd],
+                      Y[::arrw_strd, ::arrw_strd],
+                      U[::arrw_strd, ::arrw_strd],
+                      V[::arrw_strd, ::arrw_strd])
+    axs[t].set_xlim(0, n)
+    axs[t].set_ylim(0, m)
+    axs[t].tick_params(bottom=False, left=False, labelbottom=False, labelleft=False)
+
+fig.savefig(f"figures/flow.png", bbox_inches="tight", pad_inches=0.1, dpi=300)
+
+
+
+## ALPHAS
+
+fig, axs = plt.subplots(1, 10, figsize=(20, 3))
+images = []
+for t in range(10):
+    images.append(axs[t].imshow(alphas[t].detach().numpy()[0, 5, :, :]))
+    axs[t].axis("off")
+plt.savefig("figures/alphas.png", bbox_inches="tight", pad_inches=0.01, dpi=300)
+
+
+
+## PRED & LABEL
+
+fig, axs = plt.subplots(2, 10, figsize=(10, 1))
+images = []
+for t in range(10):
+    images.append(axs[0, t].imshow(y.detach().numpy()[0, t, 0, :, :], cmap=plt.get_cmap("coolwarm")))
+    axs[1, t].imshow(pred.detach().numpy()[0, t, 0, :, :], cmap=plt.get_cmap("coolwarm"))
+    axs[0, t].axis("off")
+    axs[1, t].axis("off")
+clb = fig.colorbar(images[0], ax=axs, orientation='vertical', fraction=.1, aspect=10, drawedges=False, pad=0.01)
+clb.ax.tick_params(labelsize=4)
+clb.outline.set_linewidth(0.01)
+plt.savefig("figures/comparision.png", bbox_inches="tight", pad_inches=0.01, dpi=300)
+
