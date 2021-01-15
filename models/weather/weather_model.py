@@ -121,7 +121,7 @@ class WeatherModel(nn.Module):
             x = layer_h
 
             layer_output_list.append(layer_h)
-            layer_state_list.append([layer_h, layer_c])
+            layer_state_list.append([h, c])
 
         return layer_output_list, layer_state_list
 
@@ -132,21 +132,26 @@ class WeatherModel(nn.Module):
             for layer_idx in range(self.num_layers):
                 h, c = hidden[layer_idx]
 
-                if layer_idx == 0:
-                    h_cur, c_cur = self.__forward_temporal_attn(y_next, hidden=(h, c))
-                else:
-                    h_cur = h[:, -1]
-                    c_cur = c[:, -1]
+                h, c = self.decoder[layer_idx](input_tensor=y_next,
+                                               cur_state=[h, c])
+                y_next = h
+                hidden[layer_idx] = (h, c)
 
-                h_cur, c_cur = self.decoder[layer_idx](input_tensor=y_next,
-                                                       cur_state=[h_cur, c_cur])
-                y_next = h_cur
+                # if layer_idx == 0:
+                #     h_cur, c_cur = self.__forward_temporal_attn(y_next, hidden=(h, c))
+                # else:
+                #     h_cur = h[:, -1]
+                #     c_cur = c[:, -1]
 
-                h = torch.cat([h, h_cur.unsqueeze(1)], dim=1)
-                h = h[:, 1:]
-
-                c = torch.cat([c, c_cur.unsqueeze(1)], dim=1)
-                c = c[:, 1:]
+                # h_cur, c_cur = self.decoder[layer_idx](input_tensor=y_next,
+                #                                        cur_state=[h_cur, c_cur])
+                # y_next = h_cur
+                #
+                # h = torch.cat([h, h_cur.unsqueeze(1)], dim=1)
+                # h = h[:, 1:]
+                #
+                # c = torch.cat([c, c_cur.unsqueeze(1)], dim=1)
+                # c = c[:, 1:]
 
                 hidden[layer_idx] = (h, c)
 
