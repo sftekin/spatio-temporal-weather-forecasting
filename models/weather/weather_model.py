@@ -20,9 +20,9 @@ class WeatherModel(nn.Module):
         self.window_out = window_out
         self.num_layers = num_layers
         self.encoder_params = encoder_params
+        self.decoder_params = decoder_params
         self.input_attn_params = input_attn_params
         self.temporal_attn_params = temporal_attn_params
-        self.decoder_params = decoder_params
         self.selected_dim = selected_dim
 
         # self.input_cnn = InputCNN(in_channels=self.window_in)
@@ -30,14 +30,26 @@ class WeatherModel(nn.Module):
         self.input_attn = Attention(input_dim=input_attn_params["input_dim"],
                                     hidden_dim=input_attn_params["hidden_dim"])
 
-        self.temporal_attn = Attention(input_dim=temporal_attn_params["input_dim"],
-                                       hidden_dim=temporal_attn_params["hidden_dim"])
-
         # define encoder
         self.encoder = self.__define_block(encoder_params)
 
         # define decoder
         self.decoder = self.__define_block(decoder_params)
+
+        self.output_conv = nn.Sequential(
+            nn.Conv2d(in_channels=self.decoder_params['hidden_dims'][-1],
+                      out_channels=5,
+                      kernel_size=3,
+                      padding=1,
+                      bias=False),
+            nn.LeakyReLU(inplace=True),
+            nn.Conv2d(in_channels=5,
+                      out_channels=1,
+                      kernel_size=1,
+                      padding=0,
+                      bias=False),
+            nn.LeakyReLU(inplace=True)
+        )
 
         self.hidden = None
         self.is_trainable = True
@@ -152,9 +164,7 @@ class WeatherModel(nn.Module):
                 #
                 # c = torch.cat([c, c_cur.unsqueeze(1)], dim=1)
                 # c = c[:, 1:]
-
-                hidden[layer_idx] = (h, c)
-
+            y_next = self.output_conv(y_next)
             y_pre.append(y_next)
 
         y_pre = torch.stack(y_pre, dim=1)
@@ -180,20 +190,3 @@ class WeatherModel(nn.Module):
         x_tilda = x * alpha_tensor.unsqueeze(1)
 
         return x_tilda, alpha_tensor
-
-    def __forward_temporal_attn(self, y_next, hidden):
-        h, c = hidden
-        seq_len = h.shape[1]
-
-        beta_list = []
-        for t in range(seq_len):
-            hid_t = (h[:, t], c[:, t])
-
-            beta = self.temporal_attn(y_next, hid_t)
-            beta_list.append(beta)
-
-        beta_tensor = torch.cat(beta_list, dim=1)
-        beta_tensor = F.softmax(beta_tensor, dim=1)
-        h_tilda = torch.sum(h * beta_tensor.unsqueeze(2), dim=1)
-
-        return h_tilda, c[:, -1]

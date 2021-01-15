@@ -17,7 +17,7 @@ data_params = {
     "check_files": False,
     "features": ['d', 'cc', 'z', 'pv', 'r', 'ciwc', 'clwc', 'q', 'crwc', 'cswc', 't', 'u', 'v', 'w'],
     "atm_dim": -1,
-    "rebuild": True
+    "rebuild": False
 }
 
 batch_gen_params = {
@@ -79,7 +79,7 @@ model_params = {
         "selected_dim": 5,
         "input_attn_params": {
             "input_dim": 10,
-            "hidden_dim": 1,
+            "hidden_dim": 32,
         },
         "temporal_attn_params": {
             "input_dim": 1,
@@ -87,14 +87,14 @@ model_params = {
         },
         "encoder_params": {
             "input_dim": 9,
-            "hidden_dims": [1, 16, 32],
+            "hidden_dims": [32, 32, 16],
             "kernel_size": [3, 3, 3],
             "bias": False,
             "peephole_con": False
         },
         "decoder_params": {
             "input_dim": 1,
-            "hidden_dims": [32, 16, 1],
+            "hidden_dims": [16, 32, 32],
             "kernel_size": [3, 3, 3],
             "bias": False,
             "peephole_con": False
