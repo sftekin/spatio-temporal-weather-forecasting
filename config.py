@@ -17,7 +17,7 @@ data_params = {
     "check_files": False,
     "features": ['d', 'cc', 'z', 'pv', 'r', 'ciwc', 'clwc', 'q', 'crwc', 'cswc', 't', 'u', 'v', 'w'],
     "atm_dim": -1,
-    "rebuild": False
+    "rebuild": True
 }
 
 batch_gen_params = {
