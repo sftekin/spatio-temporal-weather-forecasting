@@ -25,8 +25,6 @@ class WeatherModel(nn.Module):
         self.temporal_attn_params = temporal_attn_params
         self.selected_dim = selected_dim
 
-        # self.input_cnn = InputCNN(in_channels=self.window_in)
-
         self.input_attn = Attention(input_dim=input_attn_params["input_dim"],
                                     hidden_dim=input_attn_params["hidden_dim"])
 
@@ -100,7 +98,8 @@ class WeatherModel(nn.Module):
         _, cur_states = self.__forward_encoder(x, hidden)
 
         # reverse the state list
-        cur_states = [cur_states[i - 1] for i in range(len(cur_states), 0, -1)]
+        cur_states = [(torch.sum(cur_states[i - 1][0], dim=1),
+                       torch.sum(cur_states[i - 1][1], dim=1)) for i in range(len(cur_states), 0, -1)]
 
         # forward decoder block
         dec_output = self.__forward_decoder(x[:, [-1], self.selected_dim], cur_states)
@@ -133,7 +132,7 @@ class WeatherModel(nn.Module):
             x = layer_h
 
             layer_output_list.append(layer_h)
-            layer_state_list.append([h, c])
+            layer_state_list.append([layer_h, layer_c])
 
         return layer_output_list, layer_state_list
 
@@ -149,21 +148,6 @@ class WeatherModel(nn.Module):
                 y_next = h
                 hidden[layer_idx] = (h, c)
 
-                # if layer_idx == 0:
-                #     h_cur, c_cur = self.__forward_temporal_attn(y_next, hidden=(h, c))
-                # else:
-                #     h_cur = h[:, -1]
-                #     c_cur = c[:, -1]
-
-                # h_cur, c_cur = self.decoder[layer_idx](input_tensor=y_next,
-                #                                        cur_state=[h_cur, c_cur])
-                # y_next = h_cur
-                #
-                # h = torch.cat([h, h_cur.unsqueeze(1)], dim=1)
-                # h = h[:, 1:]
-                #
-                # c = torch.cat([c, c_cur.unsqueeze(1)], dim=1)
-                # c = c[:, 1:]
             y_next = self.output_conv(y_next)
             y_pre.append(y_next)
 

@@ -34,7 +34,7 @@ trainer_params = {
     "momentum": 0.7,
     "optimizer": "adam",
     "weight_decay": 0.00023,
-    "learning_rate": 0.0007,
+    "learning_rate": 0.0006,
     "clip": 5,
     "early_stop_tolerance": 4
 }
@@ -88,7 +88,7 @@ model_params = {
         "encoder_params": {
             "input_dim": 9,
             "hidden_dims": [32, 32, 16],
-            "kernel_size": [3, 3, 3],
+            "kernel_size": [5, 3, 1],
             "bias": False,
             "peephole_con": False
         },
