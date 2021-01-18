@@ -3,35 +3,35 @@ import torch.nn as nn
 
 
 class Attention(nn.Module):
-    def __init__(self, input_dim, hidden_dim):
+    def __init__(self, input_dim, hidden_dim, attn_channel, kernel_size):
         super(Attention, self).__init__()
+        self.kernel_size = kernel_size
+        self.padding = kernel_size // 2
 
         self.H = nn.Conv2d(in_channels=hidden_dim,
-                           out_channels=5,
-                           kernel_size=3,
-                           padding=1,
+                           out_channels=attn_channel,
+                           kernel_size=kernel_size,
+                           padding=self.padding,
                            bias=False)
 
         self.W = nn.Conv2d(in_channels=input_dim,
-                           out_channels=5,
-                           kernel_size=3,
-                           stride=1,
-                           padding=1,
+                           out_channels=attn_channel,
+                           kernel_size=kernel_size,
+                           padding=self.padding,
                            bias=False)
 
-        self.V = nn.Conv2d(in_channels=5,
+        self.V = nn.Conv2d(in_channels=attn_channel,
                            out_channels=1,
-                           kernel_size=3,
-                           stride=1,
-                           padding=1,
+                           kernel_size=kernel_size,
+                           padding=self.padding,
                            bias=False)
 
     def forward(self, input_tensor, hidden):
         """
 
-        :param torch.tensor input_tensor: (B, T, m, n)
-        :param tuple of torch.tensor hidden: ((B, hidden, M, N), (B, hidden, M, N))
-        :return: attention energies, (B, 1)
+        :param torch.Tensor input_tensor: (B, T, m, n)
+        :param tuple of torch.Tensor hidden: ((B, hidden, M, N), (B, hidden, M, N))
+        :return: attention energies, (B, 1, M, N)
         """
         # comb_hid = torch.cat(hidden, dim=1)
 

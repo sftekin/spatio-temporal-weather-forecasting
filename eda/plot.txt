@@ -1,3 +1,5 @@
+# PLOT CODES IN DEBUG
+
 ## X
 
 fig, axs = plt.subplots(1, 10, figsize=(20, 3))
@@ -32,7 +34,6 @@ for t in range(seq_len):
 fig.savefig(f"figures/flow.png", bbox_inches="tight", pad_inches=0.1, dpi=300)
 
 
-
 ## ALPHAS
 
 fig, axs = plt.subplots(1, 10, figsize=(20, 3))
@@ -41,7 +42,6 @@ for t in range(10):
     images.append(axs[t].imshow(alphas[t].detach().numpy()[0, 5, :, :]))
     axs[t].axis("off")
 plt.savefig("figures/alphas.png", bbox_inches="tight", pad_inches=0.01, dpi=300)
-
 
 
 ## PRED & LABEL
@@ -58,7 +58,9 @@ clb.ax.tick_params(labelsize=4)
 clb.outline.set_linewidth(0.01)
 plt.savefig("figures/comparision.png", bbox_inches="tight", pad_inches=0.01, dpi=300)
 
-# validation curve
+
+## VALIDATION CURVE
+
 plt.close("all")
 plt.figure(figsize=(20, 6))
 plt.plot(range(len(loss_u_net[1])), loss_u_net[1], '->', label="UNet", color='g', lw=1.8)

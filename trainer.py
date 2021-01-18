@@ -6,8 +6,8 @@ from copy import deepcopy
 
 
 class Trainer:
-
-    def __init__(self, num_epochs, early_stop_tolerance, clip, optimizer, learning_rate, weight_decay, momentum, device):
+    def __init__(self, num_epochs, early_stop_tolerance, clip, optimizer,
+                 learning_rate, weight_decay, momentum, device):
         self.num_epochs = num_epochs
         self.clip = clip
         self.optimizer = optimizer

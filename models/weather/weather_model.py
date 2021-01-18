@@ -9,7 +9,7 @@ from models.baseline.convlstm import ConvLSTMCell
 class WeatherModel(nn.Module):
 
     def __init__(self, input_size, window_in, window_out, num_layers, selected_dim,
-                 encoder_params, decoder_params, input_attn_params, temporal_attn_params, device):
+                 encoder_params, decoder_params, input_attn_params, output_conv_params, device):
         nn.Module.__init__(self)
 
         self.device = device
@@ -22,11 +22,13 @@ class WeatherModel(nn.Module):
         self.encoder_params = encoder_params
         self.decoder_params = decoder_params
         self.input_attn_params = input_attn_params
-        self.temporal_attn_params = temporal_attn_params
+        self.output_conv_params = output_conv_params
         self.selected_dim = selected_dim
 
         self.input_attn = Attention(input_dim=input_attn_params["input_dim"],
-                                    hidden_dim=input_attn_params["hidden_dim"])
+                                    hidden_dim=input_attn_params["hidden_dim"],
+                                    attn_channel=input_attn_params["attn_channel"],
+                                    kernel_size=input_attn_params["kernel_size"])
 
         # define encoder
         self.encoder = self.__define_block(encoder_params)
@@ -36,15 +38,15 @@ class WeatherModel(nn.Module):
 
         self.output_conv = nn.Sequential(
             nn.Conv2d(in_channels=self.decoder_params['hidden_dims'][-1],
-                      out_channels=5,
-                      kernel_size=3,
-                      padding=1,
+                      out_channels=output_conv_params['mid_channel'],
+                      kernel_size=output_conv_params['in_kernel'],
+                      padding=output_conv_params['in_kernel'] // 2,
                       bias=False),
             nn.LeakyReLU(inplace=True),
-            nn.Conv2d(in_channels=5,
+            nn.Conv2d(in_channels=output_conv_params['mid_channel'],
                       out_channels=1,
-                      kernel_size=1,
-                      padding=0,
+                      kernel_size=output_conv_params['out_kernel'],
+                      padding=output_conv_params['out_kernel'] // 2,
                       bias=False),
             nn.LeakyReLU(inplace=True)
         )
@@ -161,16 +163,18 @@ class WeatherModel(nn.Module):
         # calculate input attention
         alpha_list = []
         for k in range(d_dim):
-            # dim(x_k): (b, 256, m', n')
+            # dim(x_k): (b, t, m, n)
             x_k = x[:, :, k]
 
-            # dim(alpha): (B, 1)
+            # dim(alpha): (b, 1, m, n)
             alpha = self.input_attn(x_k, hidden)
             alpha_list.append(alpha)
 
-        # dim(alpha_tensor): (B, D)
+        # dim(alpha_tensor): (b, d, m, n)
         alpha_tensor = torch.cat(alpha_list, dim=1)
         alpha_tensor = F.softmax(alpha_tensor, dim=1)
+
+        # (b, t, d, m, n ) * (b, 1, d, m, n)
         x_tilda = x * alpha_tensor.unsqueeze(1)
 
         return x_tilda, alpha_tensor

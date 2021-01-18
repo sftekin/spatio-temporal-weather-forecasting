@@ -4,7 +4,6 @@ from scipy import signal
 
 
 class MovingAvg(nn.Module):
-
     def __init__(self, window_in, window_out, mode, output_dim, device):
         super(MovingAvg, self).__init__()
         self.mode = mode

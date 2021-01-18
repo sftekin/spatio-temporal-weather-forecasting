@@ -2,7 +2,7 @@ import os
 import shutil
 import pandas as pd
 
-from config import experiment_params, data_params, batch_gen_params, trainer_params, model_params
+from config import experiment_params, data_params, model_params
 from data_creator import DataCreator
 from batch_generator import BatchGenerator
 from experiment import predict, train
@@ -35,10 +35,19 @@ def run():
         start_date_str = '-'.join([str(months[i].year), str(months[i].month), '01'])
         start_date = pd.to_datetime(start_date_str)
         end_date = start_date + pd.DateOffset(months=data_length) - pd.DateOffset(hours=1)
-        date_range_str = start_date_str + end_date.strftime("%Y-%m-%d")
+        date_range_str = start_date_str + "_" + end_date.strftime("%Y-%m-%d")
 
         data_creator = DataCreator(start_date=start_date, end_date=end_date, **data_params)
         weather_data = data_creator.create_data()
+
+        selected_model_params = model_params[model_name]["core"]
+        batch_gen_params = model_params[model_name]["batch_gen"]
+        trainer_params = model_params[model_name]["trainer"]
+        config = {
+            "data_params": data_params,
+            "experiment_params": experiment_params,
+            f"{model_name}_params": model_params[model_name]
+        }
 
         batch_generator = BatchGenerator(weather_data=weather_data,
                                          val_ratio=val_ratio,
@@ -46,14 +55,18 @@ def run():
                                          params=batch_gen_params,
                                          normalize_flag=normalize_flag)
 
-        model = model_dispatcher[model_name](device=device, **model_params[model_name])
+        model = model_dispatcher[model_name](device=device, **selected_model_params)
 
+        print(f"Training {model_name} for the {date_range_str}")
         train(model_name=model_name,
               model=model,
               batch_generator=batch_generator,
               trainer_params=trainer_params,
               date_r=date_range_str,
+              config=config,
               device=device)
+
+        print(f"Predicting {model_name} for the {date_range_str}")
         predict(model_name=model_name, batch_generator=batch_generator)
 
         # remove dump directory

@@ -6,7 +6,7 @@ experiment_params = {
     "val_ratio": 0.1,
     "test_ratio": 0.1,
     "normalize_flag": True,
-    "model": "weather_model",
+    "model": "u_net",
     "device": 'cuda'
 }
 
@@ -20,84 +20,146 @@ data_params = {
     "rebuild": False
 }
 
-batch_gen_params = {
-    "input_dim": [0, 2, 3, 4, 7, 10, 11, 12, 13],
-    "output_dim": 10,
-    "window_in_len": 10,
-    "window_out_len": 10,
-    "batch_size": 8,
-    "shuffle": True,
-}
-
-trainer_params = {
-    "num_epochs": 100,
-    "momentum": 0.7,
-    "optimizer": "adam",
-    "weight_decay": 0.00023,
-    "learning_rate": 0.0006,
-    "clip": 5,
-    "early_stop_tolerance": 4
-}
-
 model_params = {
     "moving_avg": {
-        "window_in": 30,
-        "window_out": 10,
-        "output_dim": 5,
-        "mode": "WMA"
+        "batch_gen": {
+            "input_dim": [0, 2, 3, 4, 7, 10, 11, 12, 13],
+            "output_dim": 10,
+            "window_in_len": 30,
+            "window_out_len": 10,
+            "batch_size": 8,
+            "shuffle": True,
+        },
+        "trainer": {
+            "num_epochs": 100,
+            "momentum": 0.7,
+            "optimizer": "adam",
+            "weight_decay": 0.00023,
+            "learning_rate": 0.0006,
+            "clip": 5,
+            "early_stop_tolerance": 4
+        },
+        "core": {
+            "window_in": 30,  # should be same with batch_gen["window_in_len"]
+            "window_out": 10,  # should be same with batch_gen["window_out_len"]
+            "output_dim": 5,
+            "mode": "WMA"
+        }
     },
     "convlstm": {
-        "input_size": (61, 121),
-        "window_in": 10,
-        "window_out": 10,
-        "num_layers": 3,
-        "encoder_params": {
-            "input_dim": 9,
-            "hidden_dims": [1, 16, 32],
-            "kernel_size": [3, 3, 3],
-            "bias": False,
-            "peephole_con": False
+        "batch_gen": {
+            "input_dim": [0, 2, 3, 4, 7, 10, 11, 12, 13],
+            "output_dim": 10,
+            "window_in_len": 10,
+            "window_out_len": 10,
+            "batch_size": 8,
+            "shuffle": True,
         },
-        "decoder_params": {
-            "input_dim": 32,
-            "hidden_dims": [32, 16, 1],
-            "kernel_size": [3, 3, 3],
-            "bias": False,
-            "peephole_con": False
-        }
+        "trainer": {
+            "num_epochs": 100,
+            "momentum": 0.7,
+            "optimizer": "adam",
+            "weight_decay": 0.00023,
+            "learning_rate": 0.0006,
+            "clip": 5,
+            "early_stop_tolerance": 4
+        },
+        "core": {
+            "input_size": (61, 121),
+            "window_in": 10,  # should be same with batch_gen["window_in_len"]
+            "window_out": 10,  # should be same with batch_gen["window_out_len"]
+            "num_layers": 3,
+            "encoder_params": {
+                "input_dim": 9,
+                "hidden_dims": [1, 16, 32],
+                "kernel_size": [3, 3, 3],
+                "bias": False,
+                "peephole_con": False
+            },
+            "decoder_params": {
+                "input_dim": 32,
+                "hidden_dims": [32, 16, 1],
+                "kernel_size": [3, 3, 3],
+                "bias": False,
+                "peephole_con": False
+            }
+        },
     },
     "u_net": {
-        "selected_dim": 5,
-        "in_channels": 10,
-        "out_channels": 10
+        "batch_gen": {
+            "input_dim": [0, 2, 3, 4, 7, 10, 11, 12, 13],
+            "output_dim": 10,
+            "window_in_len": 10,
+            "window_out_len": 10,
+            "batch_size": 8,
+            "shuffle": True,
+        },
+        "trainer": {
+            "num_epochs": 100,
+            "momentum": 0.7,
+            "optimizer": "adam",
+            "weight_decay": 0.00023,
+            "learning_rate": 0.0001,
+            "clip": 5,
+            "early_stop_tolerance": 6
+        },
+        "core": {
+            "selected_dim": 5,
+            "in_channels": 10,  # should be same with batch_gen["window_in_len"]
+            "out_channels": 10  # should be same with batch_gen["window_out_len"]
+        }
+
     },
     "weather_model": {
-        "input_size": (61, 121),
-        "window_in": 10,
-        "window_out": 10,
-        "num_layers": 3,
-        "selected_dim": 5,
-        "input_attn_params": {
-            "input_dim": 10,
-            "hidden_dim": 32,
+        "batch_gen": {
+            "input_dim": [0, 2, 3, 4, 7, 10, 11, 12, 13],
+            "output_dim": 10,
+            "window_in_len": 10,
+            "window_out_len": 10,
+            "batch_size": 8,
+            "shuffle": True,
         },
-        "temporal_attn_params": {
-            "input_dim": 1,
-            "hidden_dim": 32,
+        "trainer": {
+            "num_epochs": 100,
+            "momentum": 0.7,
+            "optimizer": "adam",
+            "weight_decay": 0.00023,
+            "learning_rate": 0.0006,
+            "clip": 5,
+            "early_stop_tolerance": 4
         },
-        "encoder_params": {
-            "input_dim": 9,
-            "hidden_dims": [32, 32, 16],
-            "kernel_size": [5, 3, 1],
-            "bias": False,
-            "peephole_con": False
-        },
-        "decoder_params": {
-            "input_dim": 1,
-            "hidden_dims": [16, 32, 32],
-            "kernel_size": [3, 3, 3],
-            "bias": False,
-            "peephole_con": False
+        "core": {
+            "input_size": (61, 121),
+            "window_in": 10,  # should be same with batch_gen["window_in_len"]
+            "window_out": 10,  # should be same with batch_gen["window_out_len"]
+            "num_layers": 3,
+            "selected_dim": 5,
+            "input_attn_params": {
+                "input_dim": 10,
+                "hidden_dim": 32,
+                "attn_channel": 5,
+                "kernel_size": 3
+            },
+            "encoder_params": {
+                "input_dim": 9,
+                "hidden_dims": [32, 32, 16],
+                "kernel_size": [5, 3, 1],
+                "bias": False,
+                "peephole_con": False
+            },
+            "decoder_params": {
+                "input_dim": 1,
+                "hidden_dims": [16, 32, 32],
+                "kernel_size": [3, 3, 3],
+                "bias": False,
+                "peephole_con": False
+            },
+            "output_conv_params": {
+                "mid_channel": 5,
+                "in_kernel": 3,
+                "out_kernel": 1
+            }
         }
+
     }
 }

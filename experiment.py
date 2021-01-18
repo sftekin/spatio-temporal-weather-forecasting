@@ -6,7 +6,7 @@ import pickle as pkl
 from trainer import Trainer
 
 
-def train(model_name, model, batch_generator, trainer_params, date_r, device):
+def train(model_name, model, batch_generator, trainer_params, date_r, config, device):
     experiment_count = _get_exp_count(model_name)
     save_dir = os.path.join('results', model_name, 'exp_' + str(experiment_count+1))
     os.makedirs(save_dir)
@@ -14,15 +14,17 @@ def train(model_name, model, batch_generator, trainer_params, date_r, device):
     loss_save_path = os.path.join(save_dir, 'loss.pkl')
     model_save_path = os.path.join(save_dir, 'model.pkl')
     trainer_save_path = os.path.join(save_dir, 'trainer.pkl')
+    config_save_path = os.path.join(save_dir, "config.pkl")
 
     trainer = Trainer(device=device, **trainer_params)
     train_val_loss = trainer.fit(model, batch_generator)
     test_loss = trainer.transform(model, batch_generator)
 
     train_val_loss += (test_loss, date_r)
+    model = model.to("cpu")
 
-    for path, obj in zip([loss_save_path, model_save_path, trainer_save_path],
-                         [train_val_loss, model, trainer]):
+    for path, obj in zip([loss_save_path, model_save_path, trainer_save_path, config_save_path],
+                         [train_val_loss, model, trainer, config]):
         with open(path, 'wb') as file:
             pkl.dump(obj, file)
 
