@@ -120,13 +120,13 @@ model_params = {
             "shuffle": True,
         },
         "trainer": {
-            "num_epochs": 100,
+            "num_epochs": 60,
             "momentum": 0.7,
             "optimizer": "adam",
             "weight_decay": 0.00023,
-            "learning_rate": 0.0006,
+            "learning_rate": 0.0003,
             "clip": 5,
-            "early_stop_tolerance": 4
+            "early_stop_tolerance": 5
         },
         "core": {
             "input_size": (61, 121),
