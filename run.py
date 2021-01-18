@@ -67,7 +67,10 @@ def run():
               device=device)
 
         print(f"Predicting {model_name} for the {date_range_str}")
-        predict(model_name=model_name, batch_generator=batch_generator, device=device)
+        try:
+            predict(model_name=model_name, batch_generator=batch_generator, device=device)
+        except Exception as e:
+            print(f"Couldnt perform prediction, the exception is {e}")
 
         # remove dump directory
         shutil.rmtree(dump_file_dir)
