@@ -67,7 +67,7 @@ def run():
               device=device)
 
         print(f"Predicting {model_name} for the {date_range_str}")
-        predict(model_name=model_name, batch_generator=batch_generator)
+        predict(model_name=model_name, batch_generator=batch_generator, device=device)
 
         # remove dump directory
         shutil.rmtree(dump_file_dir)

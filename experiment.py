@@ -29,11 +29,12 @@ def train(model_name, model, batch_generator, trainer_params, date_r, config, de
             pkl.dump(obj, file)
 
 
-def predict(model_name, batch_generator, exp_num=None):
+def predict(model_name, batch_generator, device, exp_num=None):
     # find the best model
     model, trainer = _find_best_model(model_name, exp_num=exp_num)
 
-#    trainer.fit_batch_generator(batch_generator)
+    model = model.to(device)
+    trainer.device = device
     predict_loss = trainer.transform(model, batch_generator)
 
     return predict_loss
