@@ -6,7 +6,7 @@ experiment_params = {
     "val_ratio": 0.1,
     "test_ratio": 0.1,
     "normalize_flag": True,
-    "model": "u_net",
+    "model": "weather_model",
     "device": 'cuda'
 }
 
