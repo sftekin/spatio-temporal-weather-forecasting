@@ -3,15 +3,19 @@ import gc
 import netCDF4
 import numpy as np
 import pandas as pd
+from scipy import signal
 
 
 class WeatherTransformer:
-    def __init__(self, file_dir, features, atm_dim, freq, check=False):
+    def __init__(self, file_dir, features, atm_dim, freq, target_dim, smooth=False, smooth_win_len=31, check=False):
         self.file_dir = file_dir
         self.features = features
         self.atm_dim = atm_dim
+        self.target_dim = target_dim
         self.index_date = pd.to_datetime('1900-01-01')
         self.freq = freq
+        self.smooth = smooth
+        self.smooth_win_len = smooth_win_len
 
         self.dates = self._get_file_dates()
         if check:
@@ -101,6 +105,16 @@ class WeatherTransformer:
         # temporal crop
         temporal_idx = self._crop_temporal(time_combined, date_range)
         data_cropped = data_combined[temporal_idx]
+
+        if self.smooth:
+            window = np.ones(self.smooth_win_len) / self.smooth_win_len
+            height, width = data_cropped.shape[1:3]
+            target = data_cropped[..., self.target_dim]
+            gap = self.smooth_win_len // 2
+            for m in range(height):
+                for n in range(width):
+                    smoothed = signal.convolve(target[:, m, n], window, 'valid')
+                    target[gap:-gap, m, n] = smoothed
 
         # save data for each timestamp
         date_range = pd.Series(date_range)

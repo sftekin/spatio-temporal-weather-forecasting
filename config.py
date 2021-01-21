@@ -17,6 +17,9 @@ data_params = {
     "check_files": False,
     "features": ['d', 'cc', 'z', 'pv', 'r', 'ciwc', 'clwc', 'q', 'crwc', 'cswc', 't', 'u', 'v', 'w'],
     "atm_dim": -1,
+    "target_dim": 10,
+    "smooth": True,
+    "smooth_win_len": 31,  # select odd
     "rebuild": True
 }
 
