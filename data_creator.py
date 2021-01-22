@@ -5,7 +5,7 @@ from transformer.weather_transform import WeatherTransformer
 
 
 class DataCreator:
-    def __init__(self, weather_raw_dir, start_date, end_date, spatial_range, target_dim,
+    def __init__(self, weather_raw_dir, start_date, end_date, spatial_range, target_dim, downsample_mode,
                  weather_freq=3, features=None, atm_dim=0, check_files=False,
                  rebuild=True, smooth=True, smooth_win_len=31):
         """
@@ -40,6 +40,7 @@ class DataCreator:
         self.target_dim = target_dim
         self.smooth = smooth
         self.smooth_win_len = smooth_win_len
+        self.downsample_mode = downsample_mode
 
     def create_data(self):
         weather_folder = os.path.join(self.data_dir, 'data_dump')
@@ -66,7 +67,8 @@ class DataCreator:
                                                      freq=self.weather_freq,
                                                      target_dim=self.target_dim,
                                                      smooth=self.smooth,
-                                                     smooth_win_len=self.smooth_win_len)
+                                                     smooth_win_len=self.smooth_win_len,
+                                                     downsample_mode=self.downsample_mode)
 
             # create weather data
             date_r = pd.date_range(start=self.start_date,

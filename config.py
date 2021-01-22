@@ -14,7 +14,7 @@ data_params = {
     "weather_raw_dir": 'data/data_raw',
     "spatial_range": [],  # [[30, 45], [20, 50]],
     "weather_freq": 3,
-    "downsaple_mode": "selective",  # can be average or selective
+    "downsample_mode": "selective",  # can be average or selective
     "check_files": False,
     "features": ['d', 'cc', 'z', 'pv', 'r', 'ciwc', 'clwc', 'q', 'crwc', 'cswc', 't', 'u', 'v', 'w'],
     "atm_dim": -1,
