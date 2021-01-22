@@ -7,13 +7,15 @@ from scipy import signal
 
 
 class WeatherTransformer:
-    def __init__(self, file_dir, features, atm_dim, freq, target_dim, smooth=False, smooth_win_len=31, check=False):
+    def __init__(self, file_dir, features, atm_dim, freq, target_dim, downsample_mode,
+                 smooth=False, smooth_win_len=31, check=False):
         self.file_dir = file_dir
         self.features = features
         self.atm_dim = atm_dim
         self.target_dim = target_dim
         self.index_date = pd.to_datetime('1900-01-01')
         self.freq = freq
+        self.downsample_mode = downsample_mode
         self.smooth = smooth
         self.smooth_win_len = smooth_win_len
 
@@ -88,7 +90,13 @@ class WeatherTransformer:
                     subset_arr = subset_arr[:, self.atm_dim]
 
                     split_arr = np.split(subset_arr, range(self.freq, len(subset_arr), self.freq), axis=0)
-                    time_avg_arr = np.mean(np.stack(split_arr, axis=0), axis=1)
+                    split_arr = np.stack(split_arr, axis=0)
+                    if self.downsample_mode == "average":
+                        time_avg_arr = np.mean(split_arr, axis=1)
+                    elif self.downsample_mode == "selective":
+                        time_avg_arr = split_arr[:, 0]
+                    else:
+                        raise KeyError(f"there is no '{self.downsample_mode}' as downsampling method")
 
                     arr_list.append(np.array(time_avg_arr))
                 data_arr = np.stack(arr_list, axis=-1)

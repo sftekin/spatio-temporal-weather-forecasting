@@ -14,11 +14,12 @@ data_params = {
     "weather_raw_dir": 'data/data_raw',
     "spatial_range": [],  # [[30, 45], [20, 50]],
     "weather_freq": 3,
+    "downsaple_mode": "selective",  # can be average or selective
     "check_files": False,
     "features": ['d', 'cc', 'z', 'pv', 'r', 'ciwc', 'clwc', 'q', 'crwc', 'cswc', 't', 'u', 'v', 'w'],
     "atm_dim": -1,
     "target_dim": 10,
-    "smooth": True,
+    "smooth": False,
     "smooth_win_len": 31,  # select odd
     "rebuild": True
 }
@@ -127,7 +128,7 @@ model_params = {
             "momentum": 0.7,
             "optimizer": "adam",
             "weight_decay": 0.00023,
-            "learning_rate": 0.0003,
+            "learning_rate": 0.0005,
             "clip": 5,
             "early_stop_tolerance": 5
         },
