@@ -2,7 +2,7 @@ experiment_params = {
     "global_start_date": '2000-01-01',
     "global_end_date": '2008-12-31',
     "data_step": 6,
-    "data_length": 24,
+    "data_length": 3,
     "val_ratio": 0.1,
     "test_ratio": 0.1,
     "normalize_flag": True,

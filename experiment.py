@@ -34,6 +34,10 @@ def predict(model_name, batch_generator, device, exp_num=None):
     model, trainer = _find_best_model(model_name, exp_num=exp_num)
 
     model = model.to(device)
+    model.device = device
+    for i in range(len(model.encoder)):
+        model.encoder[i].device = device
+        model.decoder[i].device = device
     trainer.device = device
     predict_loss = trainer.transform(model, batch_generator)
 
