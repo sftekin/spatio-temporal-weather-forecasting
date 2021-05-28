@@ -21,4 +21,4 @@ $ docker logs -f weather_model
 
 ## Dataset Link
 
-Will be updated...
+https://drive.google.com/drive/folders/1Ry1x-Fv6uxtLYfgRBv-MUOLaWjK3wPO6?usp=sharing
