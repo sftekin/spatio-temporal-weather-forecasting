@@ -1,0 +1,5 @@
+for file in glob.glob("results/weather_model/exp*"):
+    loss_path = file + "/loss.pkl"
+    with open(loss_path, "rb") as f:
+        loss = pkl.load(f)
+    print(loss[4], loss[2], loss[3])
