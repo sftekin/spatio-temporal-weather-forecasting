@@ -6,7 +6,9 @@ import pickle as pkl
 import numpy as np
 import pandas as pd
 import torch.nn as nn
-from sklearn.metrics import mean_absolute_error, mean_squared_error, mean_absolute_percentage_error, r2_score
+import matplotlib.pyplot as plt
+from sklearn.metrics import mean_absolute_error, mean_squared_error, \
+    mean_absolute_percentage_error, r2_score
 
 from config import data_params
 from data_creator import DataCreator
@@ -67,15 +69,79 @@ def run_model(model, batch_generator, mode, device):
     return metric_arr
 
 
-def check_point(model_name, scores):
+def check_point(model_name, scores, save_dir):
     file_name = f"{model_name}_evaluation_metrics.pkl"
-    with open(file_name, "wb") as f:
+    file_path = os.path.join(save_dir, file_name)
+    with open(file_path, "wb") as f:
         pkl.dump(scores, f)
 
 
-def evaluate(rebuild_data):
+def get_scores(checkpoint_dir):
+    figures_dir = "figures"
+    eval_figures_dir = os.path.join(figures_dir, "evaluation_figures")
+    if not os.path.exists(eval_figures_dir):
+        os.makedirs(eval_figures_dir)
+
+    val_exp_df = pd.DataFrame()
+    test_exp_df = pd.DataFrame()
+    for score_path in glob.glob(os.path.join(checkpoint_dir, "*.pkl")):
+        model_name = os.path.basename(score_path).split("evaluation_metrics")[0].rstrip("_")
+        with open(score_path, "rb") as f:
+            metrics = pkl.load(f)
+
+        val_exp_scores = get_experiment_scores(metrics, model_name, score_type="val")
+        test_exp_scores = get_experiment_scores(metrics, model_name, score_type="test")
+
+        val_exp_df = pd.concat([val_exp_df, val_exp_scores], axis=1)
+        test_exp_df = pd.concat([test_exp_df, test_exp_scores], axis=1)
+
+        print()
+
+
+def get_experiment_scores(metrics, model_name, score_type):
+    data_length = 24
+    start_date_str = "2000-01-01"
+    val_ratio = 0.1
+    test_ratio = 0.1
+    range_index = []
+    start_date = pd.to_datetime(start_date_str)
+    for i in range(10):
+        end_date = start_date + pd.DateOffset(months=data_length) - pd.DateOffset(hours=1)
+        r = pd.date_range(start_date, end_date, freq="3H")
+        data_len = len(r)
+        val_count = int(data_len * val_ratio)
+        test_count = int(data_len * test_ratio)
+
+        train_count = data_len - val_count - test_count
+        val_date_range = r[train_count:train_count+val_count]
+        test_date_range = r[train_count+val_count:]
+
+        val_date_range_str = val_date_range[0].strftime("%Y-%m-%d") + "_" + \
+                             val_date_range[-1].strftime("%Y-%m-%d")
+        test_date_range_str = test_date_range[0].strftime("%Y-%m-%d") + "_" + \
+                              test_date_range[-1].strftime("%Y-%m-%d")
+
+        if score_type == "test":
+            range_index.append(test_date_range_str)
+        else:
+            range_index.append(val_date_range_str)
+
+    metrics_order = ["MAE", "MSE", "MAPE", "R2"]
+    metrics_order = [m + "_" + model_name for m in metrics_order]
+    exp_scores = metrics[f"{score_type}_score"]
+    experiment_values = []
+    for exp_id in range(10):
+        metric_arr = exp_scores[exp_id]
+        experiment_values.append(np.mean(metric_arr, axis=0))
+    experiment_values = np.stack(experiment_values, axis=0)
+    experiment_df = pd.DataFrame(experiment_values, columns=metrics_order, index=range_index)
+    return experiment_df
+
+
+def evaluate(rebuild_data, cp_dir):
     results_dir = "results"
-    model_name = "moving_avg"
+    model_name = "weather_model"
+
     dump_file_dir = os.path.join('data', 'data_dump')
     exp_dir_paths = os.path.join(results_dir, model_name, "exp*")
     exp_dirs = list(glob.glob(exp_dir_paths))
@@ -157,7 +223,7 @@ def evaluate(rebuild_data):
 
         print(f"Evaluation of {file} finished")
         scores = {"val_score": val_scores, "test_score": test_scores}
-        check_point(model_name, scores)
+        check_point(model_name, scores, cp_dir)
 
         # remove dump directory
         shutil.rmtree(dump_file_dir)
@@ -165,4 +231,12 @@ def evaluate(rebuild_data):
 
 
 if __name__ == '__main__':
-    evaluate(rebuild_data=True)
+    evaluation_dir = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
+    checkpoints_dir = os.path.join(evaluation_dir, "checkpoints")
+    if not os.path.exists(checkpoints_dir):
+        os.makedirs(checkpoints_dir)
+
+    # evaluate(rebuild_data=True, cp_dir=checkpoints_dir)
+
+    get_scores(checkpoints_dir)
+
