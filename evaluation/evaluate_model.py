@@ -82,20 +82,27 @@ def get_scores(checkpoint_dir):
     if not os.path.exists(eval_figures_dir):
         os.makedirs(eval_figures_dir)
 
+    model_metrics = {}
     val_exp_df = pd.DataFrame()
     test_exp_df = pd.DataFrame()
     for score_path in glob.glob(os.path.join(checkpoint_dir, "*.pkl")):
         model_name = os.path.basename(score_path).split("evaluation_metrics")[0].rstrip("_")
         with open(score_path, "rb") as f:
             metrics = pkl.load(f)
+        model_metrics[model_name] = metrics
 
         val_exp_scores = get_experiment_scores(metrics, model_name, score_type="val")
         test_exp_scores = get_experiment_scores(metrics, model_name, score_type="test")
-
         val_exp_df = pd.concat([val_exp_df, val_exp_scores], axis=1)
         test_exp_df = pd.concat([test_exp_df, test_exp_scores], axis=1)
 
-        print()
+    val_exp_df.to_csv(os.path.join(evaluation_dir, "val_exp_scores.csv"))
+    test_exp_df.to_csv(os.path.join(evaluation_dir, "test_exp_scores.csv"))
+
+    plot_scores(model_metrics, score_type="val_score", save_dir=eval_figures_dir)
+    plot_scores(model_metrics, score_type="test_score", save_dir=eval_figures_dir)
+
+    print()
 
 
 def get_experiment_scores(metrics, model_name, score_type):
@@ -103,6 +110,7 @@ def get_experiment_scores(metrics, model_name, score_type):
     start_date_str = "2000-01-01"
     val_ratio = 0.1
     test_ratio = 0.1
+    stride = 6
     range_index = []
     start_date = pd.to_datetime(start_date_str)
     for i in range(10):
@@ -116,15 +124,17 @@ def get_experiment_scores(metrics, model_name, score_type):
         val_date_range = r[train_count:train_count+val_count]
         test_date_range = r[train_count+val_count:]
 
-        val_date_range_str = val_date_range[0].strftime("%Y-%m-%d") + "_" + \
-                             val_date_range[-1].strftime("%Y-%m-%d")
-        test_date_range_str = test_date_range[0].strftime("%Y-%m-%d") + "_" + \
-                              test_date_range[-1].strftime("%Y-%m-%d")
+        val_date_range_str = val_date_range[0].strftime("%Y-%m") + "_" + \
+                             val_date_range[-1].strftime("%Y-%m")
+        test_date_range_str = test_date_range[0].strftime("%Y-%m") + "_" + \
+                              test_date_range[-1].strftime("%Y-%m")
 
         if score_type == "test":
             range_index.append(test_date_range_str)
         else:
             range_index.append(val_date_range_str)
+
+        start_date += pd.DateOffset(months=stride)
 
     metrics_order = ["MAE", "MSE", "MAPE", "R2"]
     metrics_order = [m + "_" + model_name for m in metrics_order]
@@ -135,7 +145,39 @@ def get_experiment_scores(metrics, model_name, score_type):
         experiment_values.append(np.mean(metric_arr, axis=0))
     experiment_values = np.stack(experiment_values, axis=0)
     experiment_df = pd.DataFrame(experiment_values, columns=metrics_order, index=range_index)
+
     return experiment_df
+
+
+def plot_scores(model_metrics, score_type, save_dir):
+    fig, ax = plt.subplots(figsize=(10, 8))
+    colors = ["r", "b"]
+    marker = ["D", "o"]
+    for i, model_name in enumerate(["weather_model", "convlstm"]):
+        scores = model_metrics[model_name]
+        metrics = scores[score_type]
+
+        mean_mse = np.mean(metrics, axis=0)[:, 0]
+        std_mse = np.std(metrics, axis=0)[:, 0]
+
+        t_value = 2.262
+        standard_err = std_mse / np.sqrt(10)
+        conf_err = standard_err * t_value
+
+        ax.errorbar(range(1, len(mean_mse)+1), mean_mse,
+                    yerr=conf_err, fmt=marker[i], color=colors[i],
+                    capsize=5, capthick=3, markersize=5, label=model_name)
+    y_ticks = np.linspace(0, 2, 11)
+    y_labels = ["{:.2f}".format(i) for i in y_ticks]
+    ax.set_xticks(range(1, 11))
+    ax.set_yticks(y_ticks)
+    ax.set_ylabel(y_labels)
+    ax.set_xlabel("Number of steps forward")
+    ax.set_ylabel("MAE")
+    ax.set_title(f"{score_type.replace('_', ' ')} comparision")
+    ax.grid(True)
+    ax.legend()
+    plt.savefig(os.path.join(save_dir, f"{score_type}.png"), dpi=200)
 
 
 def evaluate(rebuild_data, cp_dir):
