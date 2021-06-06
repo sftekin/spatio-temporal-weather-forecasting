@@ -1,5 +1,6 @@
 import os
 import glob
+import shutil
 import pickle as pkl
 
 import numpy as np
@@ -66,15 +67,26 @@ def run_model(model, batch_generator, mode, device):
     return metric_arr
 
 
+def check_point(model_name, scores):
+    file_name = f"{model_name}_evaluation_metrics.pkl"
+    with open(file_name, "wb") as f:
+        pkl.dump(scores, f)
+
+
 def evaluate(rebuild_data):
     results_dir = "results"
     model_name = "moving_avg"
+    dump_file_dir = os.path.join('data', 'data_dump')
     exp_dir_paths = os.path.join(results_dir, model_name, "exp*")
     exp_dirs = list(glob.glob(exp_dir_paths))
     exp_nums = [int(os.path.basename(d).split("_")[-1]) for d in exp_dirs]
     exp_dirs = np.array(exp_dirs)[np.argsort(exp_nums)]
 
+    count = 0
+    val_scores, test_scores = [], []
     for file in exp_dirs:
+        if count >= 10:
+            break
         model_path = os.path.join(file, "model.pkl")
         loss_path = os.path.join(file, "loss.pkl")
         config_path = os.path.join(file, "config.pkl")
@@ -137,12 +149,20 @@ def evaluate(rebuild_data):
 
         mode = "val"
         val_metrics = run_model(model, batch_generator, mode, device)
+        val_scores.append(val_metrics)
 
         mode = "test"
         test_metrics = run_model(model, batch_generator, mode, device)
+        test_scores.append(test_metrics)
 
-        break
+        print(f"Evaluation of {file} finished")
+        scores = {"val_score": val_scores, "test_score": test_scores}
+        check_point(model_name, scores)
+
+        # remove dump directory
+        shutil.rmtree(dump_file_dir)
+        count += 1
 
 
 if __name__ == '__main__':
-    evaluate(rebuild_data=False)
+    evaluate(rebuild_data=True)
