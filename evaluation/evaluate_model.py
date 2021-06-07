@@ -151,9 +151,9 @@ def get_experiment_scores(metrics, model_name, score_type):
 
 def plot_scores(model_metrics, score_type, save_dir):
     fig, ax = plt.subplots(figsize=(10, 8))
-    colors = ["r", "b"]
-    marker = ["D", "o"]
-    for i, model_name in enumerate(["weather_model", "convlstm"]):
+    colors = ["r", "b", "g"]
+    marker = ["D", "o", "X"]
+    for i, model_name in enumerate(["weather_model", "convlstm", "u_net"]):
         scores = model_metrics[model_name]
         metrics = scores[score_type]
 
