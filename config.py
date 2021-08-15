@@ -21,7 +21,7 @@ data_params = {
     "target_dim": 10,
     "smooth": False,
     "smooth_win_len": 31,  # select odd
-    "rebuild": True
+    "rebuild": False
 }
 
 model_params = {
@@ -116,8 +116,8 @@ model_params = {
     },
     "weather_model": {
         "batch_gen": {
-            "input_dim": [0, 2, 3, 4, 7, 10, 11, 12, 13],
-            "output_dim": 10,
+            "input_dim": [0, 2, 3, 4, 7, 10, 11, 12, 13],  # indexes of selected features for input
+            "output_dim": [10, 11, 12],  # indexes of selected features for output
             "window_in_len": 10,
             "window_out_len": 10,
             "batch_size": 8,
@@ -134,10 +134,10 @@ model_params = {
         },
         "core": {
             "input_size": (61, 121),
-            "window_in": 10,  # should be same with batch_gen["window_in_len"]
-            "window_out": 10,  # should be same with batch_gen["window_out_len"]
+            "window_in": 10,  # must be same with batch_gen["window_in_len"]
+            "window_out": 10,  # must be same with batch_gen["window_out_len"]
             "num_layers": 3,
-            "selected_dim": 5,
+            "selected_dim": [5, 6, 7],  # indexes of batch_gen["output_dim"] on batch_gen["input_dim"] list
             "input_attn_params": {
                 "input_dim": 10,
                 "hidden_dim": 32,
@@ -152,7 +152,7 @@ model_params = {
                 "peephole_con": False
             },
             "decoder_params": {
-                "input_dim": 1,
+                "input_dim": 3,  # must be same with len(core["selected_dim"])
                 "hidden_dims": [16, 32, 32],
                 "kernel_size": [3, 3, 3],
                 "bias": False,
@@ -160,6 +160,7 @@ model_params = {
             },
             "output_conv_params": {
                 "mid_channel": 5,
+                "out_channel": 3,  # must be same with len(batch_gen["output_dim"])
                 "in_kernel": 3,
                 "out_kernel": 1
             }

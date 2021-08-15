@@ -18,7 +18,7 @@ class WeatherDataset:
         """
         self.weather_data = weather_data
         self.input_dim = input_dim
-        self.output_dim = output_dim
+        self.output_dim = output_dim if isinstance(output_dim, list) else [output_dim]
         self.window_in_len = window_in_len
         self.window_out_len = window_out_len
         self.total_window_len = window_in_len + window_out_len
@@ -48,7 +48,7 @@ class WeatherDataset:
 
             # create x and y
             x = batch_data[:, :self.window_in_len, ..., self.input_dim]
-            y = batch_data[:, self.window_in_len:, ..., [self.output_dim]]
+            y = batch_data[:, self.window_in_len:, ..., self.output_dim]
 
             # create flow matrix
             if prev_batch is None:

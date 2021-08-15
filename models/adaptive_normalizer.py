@@ -3,7 +3,7 @@ import torch
 
 class AdaptiveNormalizer:
     def __init__(self, output_dim, seasonality=''):
-        self.output_dim = output_dim
+        self.output_dim = output_dim if isinstance(output_dim, list) else [output_dim]
         self.seasonality = seasonality
         self.min_max = []
 
@@ -44,9 +44,14 @@ class AdaptiveNormalizer:
         """
         x = x.permute(0, 1, 3, 4, 2)
         batch_size, seq_len, height, width, d_dim = x.shape
-        x = x.contiguous().view(x.size(0), -1)
-        min_, max_ = self.min_max[self.output_dim]
-        x = x * max_.to(device) + min_.to(device)
-        x = x.view(batch_size, seq_len, height, width, d_dim)
+        inv_x = []
+        for dim in range(len(self.output_dim)):
+            x_dim = x[..., dim].contiguous().view(x.size(0), -1)
+            min_, max_ = self.min_max[self.output_dim[dim]]
+            x_dim = x_dim * max_.to(device) + min_.to(device)
+            x_dim = x_dim.view(batch_size, seq_len, height, width)
+            inv_x.append(x_dim)
+        x = torch.stack(inv_x, dim=-1)
         x = x.permute(0, 1, 4, 2, 3)
+
         return x

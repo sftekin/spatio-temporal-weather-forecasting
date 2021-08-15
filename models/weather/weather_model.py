@@ -44,7 +44,7 @@ class WeatherModel(nn.Module):
                       bias=False),
             nn.LeakyReLU(inplace=True),
             nn.Conv2d(in_channels=output_conv_params['mid_channel'],
-                      out_channels=1,
+                      out_channels=output_conv_params["out_channel"],
                       kernel_size=output_conv_params['out_kernel'],
                       padding=output_conv_params['out_kernel'] // 2,
                       bias=False),

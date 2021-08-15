@@ -57,14 +57,14 @@ def run():
 
         model = model_dispatcher[model_name](device=device, **selected_model_params)
 
-        # print(f"Training {model_name} for the {date_range_str}")
-        # train(model_name=model_name,
-        #       model=model,
-        #       batch_generator=batch_generator,
-        #       trainer_params=trainer_params,
-        #       date_r=date_range_str,
-        #       config=config,
-        #       device=device)
+        print(f"Training {model_name} for the {date_range_str}")
+        train(model_name=model_name,
+              model=model,
+              batch_generator=batch_generator,
+              trainer_params=trainer_params,
+              date_r=date_range_str,
+              config=config,
+              device=device)
 
         print(f"Predicting {model_name} for the {date_range_str}")
         try:
