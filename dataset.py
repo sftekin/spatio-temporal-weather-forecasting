@@ -50,14 +50,7 @@ class WeatherDataset:
             x = batch_data[:, :self.window_in_len, ..., self.input_dim]
             y = batch_data[:, self.window_in_len:, ..., self.output_dim]
 
-            # create flow matrix
-            if prev_batch is None:
-                prev_batch = torch.zeros_like(batch_data)
-
-            flow_batch = torch.cat([prev_batch[:, [-1]], batch_data], dim=1)  # (B, T+1, M, N, D)
-            f_x = self.create_flow_mat(flow_batch)
-
-            yield x, y, f_x
+            yield x, y
 
     def __create_buffer(self, in_data):
         """
@@ -88,31 +81,6 @@ class WeatherDataset:
             all_data = all_data.reshape(-1, self.batch_size, all_data.shape[-1])
 
         return all_data
-
-    def create_flow_mat(self, x):
-        """
-
-        :param y: (B, T+1, M, N, D)
-        :type y:
-        :return:
-        :rtype:
-        """
-        batch_dim, seq_dim, height, width, d_dim = x.shape
-
-        f = []
-        for t in range(1, seq_dim):
-            x_t = x[:, t, 1:height - 1, 1:width - 1, self.input_dim]
-            f_a = x_t - x[:, t-1, :height-2, 1:width-1, self.input_dim]
-            f_b = x_t - x[:, t-1, 2:height, 1:width-1, self.input_dim]
-            f_c = x_t - x[:, t-1, 1:height-1, :width-2, self.input_dim]
-            f_d = x_t - x[:, t-1, 1:height-1, 2:width, self.input_dim]
-            f_t = torch.stack([f_a + f_b, f_c + f_d], dim=-1)
-            f.append(f_t)
-        f = torch.stack(f, dim=1)
-
-        f_x = f[:, :self.window_in_len]
-
-        return f_x
 
     @staticmethod
     def __load_batch(batch):

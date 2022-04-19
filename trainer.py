@@ -106,7 +106,7 @@ class Trainer:
         else:
             step_fun = self.__train_step
         idx = 0
-        for idx, (x, y, f_x) in enumerate(generator.generate(mode)):
+        for idx, (x, y) in enumerate(generator.generate(mode)):
             print('\r{}:{}/{}'.format(mode, idx, generator.num_iter(mode)),
                   flush=True, end='')
 
@@ -117,7 +117,7 @@ class Trainer:
 
             x, y = [self.__prep_input(i) for i in [x, y]]
             loss = step_fun(model=model,
-                            inputs=[x, y, f_x.float().to(self.device), hidden],
+                            inputs=[x, y, hidden],
                             optimizer=optimizer,
                             generator=generator)
 
@@ -127,10 +127,10 @@ class Trainer:
         return running_loss
 
     def __train_step(self, model, inputs, optimizer, generator):
-        x, y, f_x, hidden = inputs
+        x, y, hidden = inputs
         if optimizer:
             optimizer.zero_grad()
-        pred = model.forward(x=x, f_x=f_x, hidden=hidden)
+        pred = model.forward(x=x, hidden=hidden)
         loss = self.criterion(pred, y)
 
         if model.is_trainable:
@@ -149,13 +149,13 @@ class Trainer:
         de_norm_loss = self.criterion(pred, y)
         de_norm_loss = de_norm_loss.detach().cpu().numpy()
         loss = loss.detach().cpu().numpy()
-        print(f"  loss: {de_norm_loss}")
+        # print(f"  loss: {de_norm_loss}")
 
         return de_norm_loss
 
     def __val_step(self, model, inputs, optimizer, generator):
-        x, y, f_x, hidden = inputs
-        pred = model.forward(x=x, f_x=f_x, hidden=hidden)
+        x, y, hidden = inputs
+        pred = model.forward(x=x, hidden=hidden)
         if generator.normalizer:
             pred = generator.normalizer.inv_norm(pred, self.device)
             y = generator.normalizer.inv_norm(y, self.device)

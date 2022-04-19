@@ -104,7 +104,7 @@ class WeatherModel(nn.Module):
                        torch.sum(cur_states[i - 1][1], dim=1)) for i in range(len(cur_states), 0, -1)]
 
         # forward decoder block
-        dec_output = self.__forward_decoder(x[:, [-1], self.selected_dim], cur_states)
+        dec_output = self.__forward_decoder(x[:, :, self.selected_dim], cur_states)
 
         return dec_output
 
@@ -112,19 +112,14 @@ class WeatherModel(nn.Module):
         layer_output_list = []
         layer_state_list = []
         b, seq_len, dim_len, height, width = x.shape
-
         for layer_idx in range(self.num_layers):
             h, c = hidden[layer_idx]
-            h_inner = []
-            c_inner = []
-            alphas = []
+            h_inner, c_inner, alphas = [], [], []
             for t in range(seq_len):
-
                 if layer_idx == 0:
                     x, alpha = self.__forward_input_attn(x, hidden=(h, c))
                     alphas.append(alpha)
-
-                h, c = self.encoder[layer_idx](input_tensor=x[:, t, :, :, :],
+                h, c = self.encoder[layer_idx](input_tensor=x[:, t],
                                                cur_state=[h, c])
                 c_inner.append(c)
                 h_inner.append(h)
@@ -132,29 +127,26 @@ class WeatherModel(nn.Module):
             layer_h = torch.stack(h_inner, dim=1)
             layer_c = torch.stack(c_inner, dim=1)
             x = layer_h
-
             layer_output_list.append(layer_h)
             layer_state_list.append([layer_h, layer_c])
 
         return layer_output_list, layer_state_list
 
-    def __forward_decoder(self, y_t, hidden):
-        y_pre = []
-        y_next = y_t
-        for t in range(self.window_out):
-            for layer_idx in range(self.num_layers):
-                h, c = hidden[layer_idx]
-
-                h, c = self.decoder[layer_idx](input_tensor=y_next,
+    def __forward_decoder(self, x, hidden):
+        b, seq_len, dim_len, height, width = x.shape
+        for layer_idx in range(self.num_layers):
+            h, c = hidden[layer_idx]
+            h_inner, c_inner = [], []
+            for t in range(seq_len):
+                h, c = self.decoder[layer_idx](input_tensor=x[:, t],
                                                cur_state=[h, c])
-                y_next = h
-                hidden[layer_idx] = (h, c)
+                c_inner.append(c)
+                h_inner.append(h)
+            layer_h = torch.stack(h_inner, dim=1)
+            layer_c = torch.stack(c_inner, dim=1)
+            x = layer_h
 
-            y_next = self.output_conv(y_next)
-            y_pre.append(y_next)
-
-        y_pre = torch.stack(y_pre, dim=1)
-
+        y_pre = self.output_conv(x[:, -1]).unsqueeze(dim=1)
         return y_pre
 
     def __forward_input_attn(self, x, hidden):
@@ -165,7 +157,6 @@ class WeatherModel(nn.Module):
         for k in range(d_dim):
             # dim(x_k): (b, t, m, n)
             x_k = x[:, :, k]
-
             # dim(alpha): (b, 1, m, n)
             alpha = self.input_attn(x_k, hidden)
             alpha_list.append(alpha)

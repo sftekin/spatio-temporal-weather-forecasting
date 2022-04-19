@@ -72,8 +72,8 @@ def run():
         except Exception as e:
             print(f"Couldnt perform prediction, the exception is {e}")
 
-        # remove dump directory
-        shutil.rmtree(dump_file_dir)
+        # # remove dump directory
+        # shutil.rmtree(dump_file_dir)
 
 
 if __name__ == '__main__':
