@@ -146,16 +146,14 @@ class Trainer:
             pred = generator.normalizer.inv_norm(pred, self.device)
             y = generator.normalizer.inv_norm(y, self.device)
 
-        de_norm_loss = self.criterion(pred, y)
-        de_norm_loss = de_norm_loss.detach().cpu().numpy()
-        loss = loss.detach().cpu().numpy()
-        # print(f"  loss: {de_norm_loss}")
+        loss = self.criterion(pred, y).detach().cpu().numpy()
 
-        return de_norm_loss
+        return loss
 
     def __val_step(self, model, inputs, optimizer, generator):
         x, y, hidden = inputs
         pred = model.forward(x=x, hidden=hidden)
+
         if generator.normalizer:
             pred = generator.normalizer.inv_norm(pred, self.device)
             y = generator.normalizer.inv_norm(y, self.device)

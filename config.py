@@ -55,7 +55,7 @@ model_params = {
             "input_dim": [0, 2, 3, 4, 7, 10, 11, 12, 13],
             "output_dim": 10,
             "window_in_len": 10,
-            "window_out_len": 1,
+            "window_out_len": 5,
             "batch_size": 8,
             "shuffle": True,
         },
@@ -71,7 +71,7 @@ model_params = {
         "core": {
             "input_size": (61, 121),
             "window_in": 10,  # should be same with batch_gen["window_in_len"]
-            "window_out": 1,  # should be same with batch_gen["window_out_len"]
+            "window_out": 5,  # should be same with batch_gen["window_out_len"]
             "num_layers": 1,
             "encoder_params": {
                 "input_dim": 9,
@@ -119,8 +119,8 @@ model_params = {
             "input_dim": [0, 2, 3, 4, 7, 10, 11, 12, 13],  # indexes of selected features for input
             "output_dim": 10,  # indexes of selected features for output
             "window_in_len": 10,
-            "window_out_len": 1,
-            "batch_size": 10,
+            "window_out_len": 5,
+            "batch_size": 8,
             "shuffle": True,
         },
         "trainer": {
@@ -128,14 +128,14 @@ model_params = {
             "momentum": 0.7,
             "optimizer": "adam",
             "weight_decay": 0.00023,
-            "learning_rate": 0.0003,
+            "learning_rate": 0.0005,
             "clip": 5,
             "early_stop_tolerance": 5
         },
         "core": {
             "input_size": (61, 121),
             "window_in": 10,  # must be same with batch_gen["window_in_len"]
-            "window_out": 1,  # must be same with batch_gen["window_out_len"]
+            "window_out": 5,  # must be same with batch_gen["window_out_len"]
             "num_layers": 1,
             "selected_dim": [5],  # indexes of batch_gen["output_dim"] on batch_gen["input_dim"] list
             "input_attn_params": {
