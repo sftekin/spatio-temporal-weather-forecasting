@@ -87,7 +87,7 @@ class Trainer:
 
             torch.cuda.empty_cache()
 
-        print('Train finished, best eval lost: {:.5f}'.format(evaluation_val_loss))
+        print('Train finished, best Validation loss: {:.5f}'.format(evaluation_val_loss))
         return train_loss, val_loss, evaluation_val_loss
 
     def transform(self, model, batch_generator):
@@ -95,7 +95,7 @@ class Trainer:
                                      generator=batch_generator,
                                      mode='test',
                                      optimizer=None)
-        print('Test finished, best eval lost: {:.5f}'.format(test_loss))
+        print('Test finished, best Test lost: {:.5f}'.format(test_loss))
         return test_loss
 
     def __step_loop(self, model, generator, mode, optimizer):
@@ -120,8 +120,8 @@ class Trainer:
                             inputs=[x, y, hidden],
                             optimizer=optimizer,
                             generator=generator)
-
             running_loss += loss
+
         running_loss /= (idx + 1)
 
         return running_loss
@@ -135,7 +135,6 @@ class Trainer:
 
         if model.is_trainable:
             loss.backward()
-
             # `clip_grad_norm` helps prevent the exploding gradient problem in RNNs / LSTMs.
             nn.utils.clip_grad_norm_(model.parameters(), self.clip)
 
