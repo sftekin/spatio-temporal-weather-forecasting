@@ -1,3 +1,6 @@
+from config_generator import Param
+
+
 experiment_params = {
     "global_start_date": '2000-01-01',
     "global_end_date": '2008-12-31',
@@ -7,7 +10,8 @@ experiment_params = {
     "test_ratio": 0.1,
     "normalize_flag": True,
     "model": "weather_model",
-    "device": 'cuda'
+    "device": 'cuda',
+    "selected_criterion": "MSE"  # choices are MSE, MAE, and MAPE
 }
 
 data_params = {
@@ -29,23 +33,23 @@ model_params = {
         "batch_gen": {
             "input_dim": [0, 2, 3, 4, 7, 10, 11, 12, 13],
             "output_dim": 10,
-            "window_in_len": 30,
-            "window_out_len": 10,
+            "window_in_len": 10,
+            "window_out_len": 5,
             "batch_size": 8,
             "shuffle": True,
         },
         "trainer": {
-            "num_epochs": 100,
+            "num_epochs": 50,
             "momentum": 0.7,
             "optimizer": "adam",
             "weight_decay": 0.00023,
-            "learning_rate": 0.0006,
+            "learning_rate": Param([0.01, 0.001, 0.0005, 0.00001]),
             "clip": 5,
             "early_stop_tolerance": 4
         },
         "core": {
-            "window_in": 30,  # should be same with batch_gen["window_in_len"]
-            "window_out": 10,  # should be same with batch_gen["window_out_len"]
+            "window_in": 10,  # should be same with batch_gen["window_in_len"]
+            "window_out": 5,  # should be same with batch_gen["window_out_len"]
             "output_dim": 5,
             "mode": "WMA"
         }
@@ -60,11 +64,11 @@ model_params = {
             "shuffle": True,
         },
         "trainer": {
-            "num_epochs": 100,
+            "num_epochs": 50,
             "momentum": 0.7,
             "optimizer": "adam",
             "weight_decay": 0.00023,
-            "learning_rate": 0.0006,
+            "learning_rate": Param([0.01, 0.001, 0.0005, 0.00001]),
             "clip": 5,
             "early_stop_tolerance": 4
         },
@@ -94,16 +98,16 @@ model_params = {
             "input_dim": [0, 2, 3, 4, 7, 10, 11, 12, 13],
             "output_dim": 10,
             "window_in_len": 10,
-            "window_out_len": 10,
+            "window_out_len": 5,
             "batch_size": 8,
             "shuffle": True,
         },
         "trainer": {
-            "num_epochs": 100,
+            "num_epochs": 50,
             "momentum": 0.7,
             "optimizer": "adam",
             "weight_decay": 0.00023,
-            "learning_rate": 0.0001,
+            "learning_rate": Param([0.01, 0.001, 0.0005, 0.00001]),
             "clip": 5,
             "early_stop_tolerance": 6
         },
@@ -124,11 +128,11 @@ model_params = {
             "shuffle": True,
         },
         "trainer": {
-            "num_epochs": 60,
+            "num_epochs": 50,
             "momentum": 0.7,
             "optimizer": "adam",
             "weight_decay": 0.00023,
-            "learning_rate": 0.0005,
+            "learning_rate": Param([0.01, 0.001, 0.0005, 0.00001]),
             "clip": 5,
             "early_stop_tolerance": 5
         },
@@ -165,6 +169,5 @@ model_params = {
                 "out_kernel": 1
             }
         }
-
     }
 }

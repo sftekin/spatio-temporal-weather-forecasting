@@ -118,7 +118,7 @@ class WeatherModel(nn.Module):
             h_inner, c_inner, alphas = [], [], []
             for t in range(seq_len):
                 if layer_idx == 0:
-                    x, alpha = self.__forward_input_attn(x, hidden=(h, c))
+                    x, alpha = self.__forward_input_attn(x, hidden=(h, c), time_step=t)
                     alphas.append(alpha)
                 h, c = self.encoder[layer_idx](input_tensor=x[:, t],
                                                cur_state=[h, c])
@@ -150,7 +150,7 @@ class WeatherModel(nn.Module):
 
         return y_pre
 
-    def __forward_input_attn(self, x, hidden):
+    def __forward_input_attn(self, x, hidden, time_step):
         d_dim = x.shape[2]
 
         # calculate input attention
@@ -166,7 +166,7 @@ class WeatherModel(nn.Module):
         alpha_tensor = torch.cat(alpha_list, dim=1)
         alpha_tensor = F.softmax(alpha_tensor, dim=1)
 
-        # (b, t, d, m, n ) * (b, 1, d, m, n)
-        x_tilda = x * alpha_tensor.unsqueeze(1)
+        # (b, d, m, n ) * (b, d, m, n)
+        x[:, time_step] *= alpha_tensor
 
-        return x_tilda, alpha_tensor
+        return x, alpha_tensor

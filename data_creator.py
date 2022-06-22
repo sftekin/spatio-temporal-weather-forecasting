@@ -46,7 +46,7 @@ class DataCreator:
         weather_folder = os.path.join(self.data_dir, 'data_dump')
 
         if not self.rebuild:
-            print('Loading from saved path')
+            print('Loading the dumped data from saved path')
             path_list = self.__get_file_paths(weather_folder)
 
             if len(path_list) == 0:
