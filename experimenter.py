@@ -112,6 +112,8 @@ def train_test(experiment_params, data_params, model_params):
         # # remove dump directory
         # shutil.rmtree(dump_file_dir)
 
+        break
+
 
 def inference(model_name, device, exp_num):
     if exp_num is None:

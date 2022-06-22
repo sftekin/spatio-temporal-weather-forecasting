@@ -114,7 +114,7 @@ model_params = {
         "core": {
             "selected_dim": 5,
             "in_channels": 10,  # should be same with batch_gen["window_in_len"]
-            "out_channels": 10  # should be same with batch_gen["window_out_len"]
+            "out_channels": 5  # should be same with batch_gen["window_out_len"]
         }
 
     },
