@@ -78,7 +78,7 @@ def train_test(experiment_params, data_params, model_params):
 
                 criterion = val_metric[selected_criterion]
                 if criterion < best_val_score:
-                    best_val_score = train_val_loss[1]
+                    best_val_score = criterion
                     best_model = copy.deepcopy(model)
                     best_trainer_param = trainer_param
                     best_scores["train"] = train_metric
