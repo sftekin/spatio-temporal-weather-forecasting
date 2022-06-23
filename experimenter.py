@@ -97,14 +97,14 @@ def train_test(experiment_params, data_params, model_params):
         eval_loss, eval_metric = trainer.evaluate(best_model, batch_generator)
         best_scores["evaluation"] = eval_metric
         best_scores["eval_loss"] = eval_loss
-        saving_checkpoint(save_dir, best_scores, model, trainer, batch_generator, config)
+        saving_checkpoint(save_dir, best_scores, best_model, trainer, batch_generator, config)
 
         print("-*-" * 10)
         print(f"TEST for the {date_range_str}")
-        test_loss, test_metric = trainer.predict(model, batch_generator)
+        test_loss, test_metric = trainer.predict(best_model, batch_generator)
         best_scores["test"] = test_metric
         best_scores["test_loss"] = test_loss
-        saving_checkpoint(save_dir, best_scores, model, trainer, batch_generator, config)
+        saving_checkpoint(save_dir, best_scores, best_model, trainer, batch_generator, config)
 
         print("-*-" * 10)
         all_scores_list = [f"{key}:\t\t{trainer.get_metric_string(metrics)}"

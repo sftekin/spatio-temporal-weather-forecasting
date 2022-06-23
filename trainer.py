@@ -174,25 +174,14 @@ class Trainer:
             # take step in classifier's optimizer
             optimizer.step()
 
-        if generator.normalizer:
-            pred = generator.normalizer.inv_norm(pred, self.device)
-            y = generator.normalizer.inv_norm(y, self.device)
-
-        metric_scores = self.__calc_metrics(pred=pred, y=y)
-        loss = self.criterion(pred, y).detach().cpu().numpy()
+        loss, metric_scores = self.__calc_scores(pred, y, generator)
 
         return loss, metric_scores
 
     def __val_step(self, model, inputs, optimizer, generator):
         x, y, hidden = inputs
         pred = model.forward(x=x, hidden=hidden)
-
-        if generator.normalizer:
-            pred = generator.normalizer.inv_norm(pred, self.device)
-            y = generator.normalizer.inv_norm(y, self.device)
-
-        metric_scores = self.__calc_metrics(pred=pred, y=y)
-        loss = self.criterion(pred, y).detach().cpu().numpy()
+        loss, metric_scores = self.__calc_scores(pred, y, generator)
 
         return loss, metric_scores
 
@@ -215,6 +204,16 @@ class Trainer:
             optimizer = None
 
         return optimizer
+
+    def __calc_scores(self, pred, y, generator):
+        if generator.normalizer:
+            pred = generator.normalizer.inv_norm(pred, self.device)
+            y = generator.normalizer.inv_norm(y, self.device)
+
+        metric_scores = self.__calc_metrics(pred=pred, y=y)
+        loss = self.criterion(pred, y).detach().cpu().numpy()
+
+        return loss, metric_scores
 
     def __calc_metrics(self, pred, y):
         metric_scores = {}

@@ -231,7 +231,7 @@ model_params = {
                 "hidden_dim": 1,
                 "kernel_size": 3,
                 "bias": False,
-                "connection": 5
+                "connection": 1
             }
         },
     },
