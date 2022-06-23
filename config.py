@@ -1,6 +1,5 @@
 from config_generator import Param
 
-
 experiment_params = {
     "global_start_date": '2000-01-01',
     "global_end_date": '2008-12-31',
@@ -9,7 +8,7 @@ experiment_params = {
     "val_ratio": 0.1,
     "test_ratio": 0.1,
     "normalize_flag": True,
-    "model": "weather_model",
+    "model": "lstm",
     "device": 'cuda',
     "selected_criterion": "MSE"  # choices are MSE, MAE, and MAPE
 }
@@ -168,6 +167,34 @@ model_params = {
                 "in_kernel": 3,
                 "out_kernel": 1
             }
+        }
+    },
+    "lstm": {
+        "batch_gen": {
+            "input_dim": [0, 2, 3, 4, 7, 10, 11, 12, 13],
+            "output_dim": 10,
+            "window_in_len": 10,
+            "window_out_len": 5,
+            "batch_size": 8,
+            "shuffle": True,
+        },
+        "trainer": {
+            "num_epochs": 50,
+            "momentum": 0.7,
+            "optimizer": "adam",
+            "weight_decay": 0.00023,
+            "learning_rate": Param([0.01, 0.001, 0.0005, 0.00001]),
+            "clip": 5,
+            "early_stop_tolerance": 6
+        },
+        "core": {
+            "input_size": (61, 121),
+            "window_out": 5,  # must be same with batch_gen["window_out_len"]
+            "num_layers": 2,
+            "selected_dim": 5,
+            "hidden_dim": 256,
+            "dropout": 0.1,
+            "bias": True
         }
     }
 }
