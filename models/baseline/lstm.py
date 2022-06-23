@@ -24,6 +24,8 @@ class LSTMModel(nn.Module):
                             dropout=self.dropout,
                             batch_first=True)
 
+        self.linear = nn.Linear(in_features=self.hidden_dim, out_features=self.input_dim)
+
         self.is_trainable = True
 
     def forward(self, x, hidden):
@@ -38,7 +40,8 @@ class LSTMModel(nn.Module):
         x_d = x_d.reshape((batch_size, win_len, self.input_dim))
 
         output, (h, c) = self.lstm(x_d, hidden)
-        output = output[:, -self.window_out:].reshape((batch_size, self.window_out, self.height, self.width))
+        output = output[:, -self.window_out:]
+        output = self.linear(output).reshape((batch_size, self.window_out, self.height, self.width))
 
         # (b, win_out, 1, m, n)
         output = output.unsqueeze(dim=2)
