@@ -14,13 +14,16 @@ from models.baseline.moving_avg import MovingAvg
 from models.baseline.convlstm import ConvLSTM
 from models.baseline.u_net import UNet
 from models.baseline.lstm import LSTMModel
+from models.baseline.traj_gru import TrajGRU
+
 
 model_dispatcher = {
     'moving_avg': MovingAvg,
     'convlstm': ConvLSTM,
     'u_net': UNet,
     'weather_model': WeatherModel,
-    "lstm": LSTMModel
+    "lstm": LSTMModel,
+    "traj_gru": TrajGRU
 }
 
 
