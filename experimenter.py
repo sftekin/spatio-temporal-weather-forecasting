@@ -69,7 +69,7 @@ def train_test(experiment_params, data_params, model_params):
         print(f"TRAINING for the {date_range_str}")
         combination_num = 0
         save_dir = os.path.join('results', model_name, 'exp_' + str(get_exp_count(model_name) + 1))
-        best_val_score, best_scores, best_trainer_param, best_model = 1e6, {}, {}, None
+        best_val_score, best_scores, best_trainer_param, best_core_param, best_model = 1e6, {}, {}, {}, None
         for trainer_param in config_generator.conf_next(input_conf=model_trainer_param):
             for core_param in config_generator.conf_next(input_conf=model_core_param):
                 print("--" * 20)
@@ -85,29 +85,38 @@ def train_test(experiment_params, data_params, model_params):
                     best_val_score = criterion
                     best_model = copy.deepcopy(model)
                     best_trainer_param = trainer_param
+                    best_core_param = core_param
                     best_scores["train"] = train_metric
                     best_scores["validation"] = val_metric
                     best_scores["train_val_loss"] = train_val_loss
                     saving_checkpoint(save_dir, best_scores, model, trainer, batch_generator, config)
                 combination_num += 1
+        best_trainer = Trainer(device=device, **best_trainer_param)
+        print("--" * 20)
+        print(f"The grid-search completed,"
+              f"\nThe best validation score {best_trainer.get_metric_string(best_scores['validation'])}"
+              f"\nThe best core parameters: {best_core_param}"
+              f"\nThe best trainer parameters: {best_trainer_param}")
 
+        # Perform evaluation
         print("-*-" * 10)
         print(f"EVALUATION  for the {date_range_str}")
-        trainer = Trainer(device=device, **best_trainer_param)
-        eval_loss, eval_metric = trainer.evaluate(best_model, batch_generator)
+        eval_loss, eval_metric = best_trainer.evaluate(best_model, batch_generator)
         best_scores["evaluation"] = eval_metric
         best_scores["eval_loss"] = eval_loss
-        saving_checkpoint(save_dir, best_scores, best_model, trainer, batch_generator, config)
+        saving_checkpoint(save_dir, best_scores, best_model, best_trainer, batch_generator, config)
 
+        # perform test
         print("-*-" * 10)
         print(f"TEST for the {date_range_str}")
-        test_loss, test_metric = trainer.predict(best_model, batch_generator)
+        test_loss, test_metric = best_trainer.predict(best_model, batch_generator)
         best_scores["test"] = test_metric
         best_scores["test_loss"] = test_loss
-        saving_checkpoint(save_dir, best_scores, best_model, trainer, batch_generator, config)
+        saving_checkpoint(save_dir, best_scores, best_model, best_trainer, batch_generator, config)
 
+        # log the results
         print("-*-" * 10)
-        all_scores_list = [f"{key}:\t\t{trainer.get_metric_string(metrics)}"
+        all_scores_list = [f"{key}:\t\t{best_trainer.get_metric_string(metrics)}"
                            for key, metrics in best_scores.items() if "_" not in key]
         all_scores_str = "\n".join(all_scores_list)
         print(f"Experiment finished for the {date_range_str} the scores are: \n"

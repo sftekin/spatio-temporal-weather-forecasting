@@ -73,7 +73,7 @@ class Trainer:
                 model.load_state_dict(best_dict)
                 train_metric_str = self.get_metric_string(metric_scores=best_train_metric)
                 val_metric_str = self.get_metric_string(metric_scores=best_val_metric)
-                print(f"Early exiting from epoch: {best_epoch}:\t"
+                print(f"\tEarly exiting from epoch: {best_epoch}:\t"
                       f"Train_loss {best_train_loss:.5f}, {train_metric_str}\t"
                       f"Validation_loss: {best_val_loss:.5f}, {val_metric_str}")
                 break
@@ -85,8 +85,8 @@ class Trainer:
         model = model.to(self.device)
 
         # train the model on the set of train+eval with the
-        # number of epochs that is equal to its halved value
-        num_epochs = self.num_epochs // 2
+        # number of epochs that is divided by 4
+        num_epochs = self.num_epochs // 4
         optimizer = self.__get_optimizer(model)
         for epoch in range(num_epochs):
             # train + val
@@ -108,7 +108,7 @@ class Trainer:
                                                              mode='train_val',
                                                              optimizer=None)
             metric_str = self.get_metric_string(metric_scores=eval_metric_scores)
-            print(f"Evaluation finished: Loss: {eval_loss:.5f}, {metric_str}")
+            print(f"\tEvaluation finished: Loss: {eval_loss:.5f}, {metric_str}")
         torch.cuda.empty_cache()
 
         return eval_loss, eval_metric_scores
@@ -123,7 +123,7 @@ class Trainer:
                                                              optimizer=None)
 
             metric_str = self.get_metric_string(metric_scores=test_metric_scores)
-            print(f"Evaluation finished: Loss: {test_loss:.5f}, {metric_str}")
+            print(f"\tTest finished: Loss: {test_loss:.5f}, {metric_str}")
         torch.cuda.empty_cache()
 
         return test_loss, test_metric_scores
@@ -136,7 +136,7 @@ class Trainer:
 
         running_loss, running_metric_scores = 0, {key: 0 for key in self.metric_collection.keys()}
         for idx, (x, y) in enumerate(generator.generate(mode)):
-            print('\r{}:{}/{}'.format(mode, idx, generator.num_iter(mode)),
+            print('\r\t{}:{}/{}'.format(mode, idx, generator.num_iter(mode)),
                   flush=True, end='')
 
             if hasattr(model, 'hidden'):
