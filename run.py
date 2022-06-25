@@ -1,5 +1,5 @@
 from config import experiment_params, data_params, model_params
-from experimenter import train_test, inference, get_exp_count
+from experimenter import train_test, inference
 
 
 def run(experiment_type="train_test", exp_num=None, model_name=None):

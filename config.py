@@ -6,15 +6,16 @@ experiment_params = {
     "data_step": 6,
     "data_length": 12,
     "val_ratio": 0.1,
-    "test_ratio": 0.1,
+    "test_ratio": 0.001,
     "normalize_flag": True,
-    "model": "traj_gru",
+    "model": "weather_model",
     "device": 'cuda',
     "selected_criterion": "MSE"  # choices are MSE, MAE, and MAPE
 }
 
 data_params = {
     "weather_raw_dir": 'data/data_raw',
+    "dump_data_folder": "train_data",
     "spatial_range": [],  # [[30, 45], [20, 50]],
     "weather_freq": 3,
     "downsample_mode": "selective",  # can be average or selective
@@ -122,7 +123,7 @@ model_params = {
             "input_dim": [0, 2, 3, 4, 7, 10, 11, 12, 13],  # indexes of selected features for input
             "output_dim": 10,  # indexes of selected features for output
             "window_in_len": 10,
-            "window_out_len": 5,
+            "window_out_len": 6,
             "batch_size": 8,
             "shuffle": True,
         },
@@ -133,12 +134,12 @@ model_params = {
             "weight_decay": 0.00023,
             "learning_rate": Param([0.01, 0.001, 0.0005, 0.00001]),
             "clip": 5,
-            "early_stop_tolerance": 5
+            "early_stop_tolerance": 4
         },
         "core": {
             "input_size": (61, 121),
             "window_in": 10,  # must be same with batch_gen["window_in_len"]
-            "window_out": 5,  # must be same with batch_gen["window_out_len"]
+            "window_out": 6,  # must be same with batch_gen["window_out_len"]
             "num_layers": 1,
             "selected_dim": [5],  # indexes of batch_gen["output_dim"] on batch_gen["input_dim"] list
             "input_attn_params": {

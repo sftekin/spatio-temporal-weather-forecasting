@@ -6,7 +6,7 @@ from transformer.weather_transform import WeatherTransformer
 
 class DataCreator:
     def __init__(self, weather_raw_dir, start_date, end_date, spatial_range, target_dim, downsample_mode,
-                 weather_freq=3, features=None, atm_dim=0, check_files=False,
+                 dump_data_folder, weather_freq=3, features=None, atm_dim=0, check_files=False,
                  rebuild=True, smooth=False, smooth_win_len=31):
         """
         Creates weather data. Stores path of the each data file as list
@@ -25,6 +25,7 @@ class DataCreator:
             os.path.dirname(os.path.abspath(__file__)))
         self.data_dir = os.path.join(self.data_dir, 'data')
         self.weather_raw_dir = weather_raw_dir
+        self.dump_data_folder = dump_data_folder
 
         # Parameters
         self.start_date = start_date
@@ -43,7 +44,7 @@ class DataCreator:
         self.downsample_mode = downsample_mode
 
     def create_data(self):
-        weather_folder = os.path.join(self.data_dir, 'data_dump')
+        weather_folder = os.path.join(self.data_dir, self.dump_data_folder)
 
         if not self.rebuild:
             print('Loading the dumped data from saved path')
