@@ -5,7 +5,7 @@ from torch.utils.data import Dataset
 
 
 class WeatherDataset:
-    def __init__(self, weather_data, input_dim, output_dim,
+    def __init__(self, weather_data, input_dim, output_dim, stride,
                  window_in_len, window_out_len, batch_size, normalizer, shuffle):
         """
 
@@ -23,6 +23,7 @@ class WeatherDataset:
         self.window_out_len = window_out_len
         self.total_window_len = window_in_len + window_out_len
         self.batch_size = batch_size
+        self.stride = stride
         self.num_iter = 0
         self.normalizer = normalizer
         self.shuffle = shuffle
@@ -47,7 +48,12 @@ class WeatherDataset:
                 batch_data = self.normalizer.norm(batch_data)
 
             # create x and y
-            x = batch_data[:, :self.window_in_len, ..., self.input_dim]
+            if self.input_dim == "all":
+                x = batch_data[:, :self.window_in_len]
+            elif isinstance(self.input_dim, list):
+                x = batch_data[:, :self.window_in_len, ..., self.input_dim]
+            else:
+                raise KeyError("wrong input_dim")
             y = batch_data[:, self.window_in_len:, ..., self.output_dim]
 
             yield x, y
@@ -62,23 +68,25 @@ class WeatherDataset:
         """
         total_frame = len(in_data)
 
-        all_data = []
-        batch = []
+        all_data, batch = [], []
         j = 0
-        for i in range(total_frame-self.total_window_len):
+        for i in range(0, total_frame-self.total_window_len, self.stride):
             if j < self.batch_size:
                 batch.append(in_data[i:i+self.total_window_len])
                 j += 1
             else:
                 all_data.append(np.stack(batch, axis=0))
-                batch = []
+                batch = [in_data[i:i + self.total_window_len]]
                 j = 0
 
-        if self.shuffle:
-            all_data = np.stack(all_data)
-            all_data = all_data.reshape(len(all_data)*self.batch_size, -1)
-            all_data = all_data[np.random.permutation(len(all_data))]
-            all_data = all_data.reshape(-1, self.batch_size, all_data.shape[-1])
+        if len(batch) > 0:
+            all_data.append(np.stack(batch, axis=0))
+
+        # if self.shuffle:
+        #     all_data = np.stack(all_data)
+        #     all_data = all_data.reshape(len(all_data)*self.batch_size, -1)
+        #     all_data = all_data[np.random.permutation(len(all_data))]
+        #     all_data = all_data.reshape(-1, self.batch_size, all_data.shape[-1])
 
         return all_data
 

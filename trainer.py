@@ -18,11 +18,7 @@ class Trainer:
         self.tolerance = early_stop_tolerance
         self.device = torch.device(device)
         self.criterion = nn.MSELoss()
-        self.metric_collection = {
-            "MSE": mean_squared_error,
-            "MAE": mean_absolute_error,
-            "MAPE": mean_absolute_percentage_error
-        }
+        self.metric_names = ["MSE", "MAE", "MAPE", "RMSE"]
 
     def train(self, model, batch_generator):
         model = model.to(self.device)
@@ -86,7 +82,7 @@ class Trainer:
 
         # train the model on the set of train+eval with the
         # number of epochs that is divided by 4
-        num_epochs = self.num_epochs // 4
+        num_epochs = max(self.num_epochs // 4, 1)
         optimizer = self.__get_optimizer(model)
         for epoch in range(num_epochs):
             # train + val
@@ -134,13 +130,13 @@ class Trainer:
         else:
             step_fun = self.__train_step
 
-        running_loss, running_metric_scores = 0, {key: 0 for key in self.metric_collection.keys()}
+        running_loss, running_metric_scores = 0, {key: 0 for key in self.metric_names}
         for idx, (x, y) in enumerate(generator.generate(mode)):
             print('\r\t{}:{}/{}'.format(mode, idx, generator.num_iter(mode)),
                   flush=True, end='')
 
             if hasattr(model, 'hidden'):
-                hidden = model.init_hidden(batch_size=generator.dataset_params['batch_size'])
+                hidden = model.init_hidden(batch_size=x.shape[0])
             else:
                 hidden = None
 
@@ -215,9 +211,17 @@ class Trainer:
 
         return loss, metric_scores
 
-    def __calc_metrics(self, pred, y):
+    @staticmethod
+    def __calc_metrics(pred, y):
+        metric_collection = {
+            "MSE": mean_squared_error,
+            "MAE": mean_absolute_error,
+            "MAPE": mean_absolute_percentage_error,
+            "RMSE": lambda preds, target: torch.sqrt(mean_squared_error(preds, target))
+        }
+
         metric_scores = {}
-        for key, metric_fun in self.metric_collection.items():
+        for key, metric_fun in metric_collection.items():
             metric_scores[key] = metric_fun(preds=pred, target=y).detach().cpu().numpy()
 
         return metric_scores

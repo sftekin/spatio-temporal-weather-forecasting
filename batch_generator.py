@@ -21,7 +21,7 @@ class BatchGenerator:
     def __split_data(self, in_data):
         data_len = len(in_data)
         val_count = int(data_len * self.val_ratio)
-        test_count = int(data_len * self.val_ratio)
+        test_count = int(data_len * self.test_ratio)
 
         train_count = data_len - val_count - test_count
 
@@ -29,7 +29,7 @@ class BatchGenerator:
             'train': in_data[:train_count],
             'val': in_data[train_count:train_count+val_count],
             'train_val': in_data[:train_count+val_count],
-            'test': in_data[train_count+val_count:]
+            'test': in_data[train_count+val_count:] if test_count > 0 else None
         }
 
         return data_dict
@@ -37,10 +37,13 @@ class BatchGenerator:
     def __create_sets(self):
         hurricane_dataset = {}
         for i in ['train', 'val', 'train_val', 'test']:
-            dataset = WeatherDataset(weather_data=self.data_dict[i],
-                                     normalizer=self.normalizer,
-                                     **self.dataset_params)
-            hurricane_dataset[i] = dataset
+            if self.data_dict[i] is not None:
+                dataset = WeatherDataset(weather_data=self.data_dict[i],
+                                         normalizer=self.normalizer,
+                                         **self.dataset_params)
+                hurricane_dataset[i] = dataset
+            else:
+                hurricane_dataset[i] = None
 
         return hurricane_dataset
 

@@ -1,5 +1,5 @@
 from config import experiment_params, data_params, model_params
-from experimenter import train_test, inference
+from experimenter import train_test, inference_on_test
 
 
 def run(experiment_type="train_test", exp_num=None, model_name=None):
@@ -8,9 +8,9 @@ def run(experiment_type="train_test", exp_num=None, model_name=None):
                    data_params=data_params,
                    model_params=model_params)
     elif experiment_type == "inference":
-        inference(model_name=model_name,
-                  exp_num=exp_num,
-                  device=experiment_params["device"])
+        inference_on_test(model_name=model_name,
+                          exp_num=exp_num,
+                          device=experiment_params["device"])
     else:
         raise KeyError("Wrong experiment_type, it can be either 'train_tester' or 'inference'")
 

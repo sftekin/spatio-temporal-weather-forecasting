@@ -108,11 +108,14 @@ def train_test(experiment_params, data_params, model_params):
 
         # perform test
         print("-*-" * 10)
-        print(f"TEST for the {date_range_str}")
-        test_loss, test_metric = best_trainer.predict(best_model, batch_generator)
-        best_scores["test"] = test_metric
-        best_scores["test_loss"] = test_loss
-        saving_checkpoint(save_dir, best_scores, best_model, best_trainer, batch_generator, config)
+        if batch_generator.dataset_dict['test'] is None:
+            print(f"Testing skipped since test_ratio is given {batch_generator.test_ratio}")
+        else:
+            print(f"TEST for the {date_range_str}")
+            test_loss, test_metric = best_trainer.predict(best_model, batch_generator)
+            best_scores["test"] = test_metric
+            best_scores["test_loss"] = test_loss
+            saving_checkpoint(save_dir, best_scores, best_model, best_trainer, batch_generator, config)
 
         # log the results
         print("-*-" * 10)
@@ -128,7 +131,14 @@ def train_test(experiment_params, data_params, model_params):
         break
 
 
-def inference(model_name, device, exp_num):
+def inference_on_test(model_name, device, exp_num):
+    trainer, model, batch_generator = get_experiment_elements(model_name, device, exp_num)
+    test_loss, test_metric = trainer.predict(model, batch_generator)
+
+    return test_loss, test_metric
+
+
+def get_experiment_elements(model_name, device, exp_num):
     if exp_num is None:
         raise KeyError("experiment number cannot be None")
     model, trainer, batch_generator = load_checkpoint(model_name, exp_num)
@@ -143,9 +153,8 @@ def inference(model_name, device, exp_num):
         model.device = device
         model.window_in = 10
     trainer.device = device
-    test_loss, test_metric = trainer.predict(model, batch_generator)
 
-    return test_loss, test_metric
+    return trainer, model, batch_generator
 
 
 def saving_checkpoint(save_dir, scores, model, trainer, batch_generator, config):
