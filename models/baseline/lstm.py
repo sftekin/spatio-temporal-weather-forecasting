@@ -4,12 +4,13 @@ from torch.autograd import Variable
 
 
 class LSTMModel(nn.Module):
-    def __init__(self, input_size, window_out, num_layers, selected_dim, hidden_dim, dropout, bias, device):
+    def __init__(self, input_size, window_in, window_out, num_layers, selected_dim, hidden_dim, dropout, bias, device):
         super(LSTMModel, self).__init__()
         self.device = device
         self.height, self.width = input_size
         self.input_dim = self.height * self.width
         self.selected_dim = selected_dim
+        self.window_in = window_in
         self.window_out = window_out
         self.num_layers = num_layers
         self.hidden_dim = hidden_dim

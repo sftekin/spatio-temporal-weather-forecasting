@@ -199,6 +199,7 @@ model_params = {
         },
         "core": {
             "input_size": (61, 121),
+            "window_in": 10,
             "window_out": 5,  # must be same with batch_gen["window_out_len"]
             "num_layers": 2,
             "selected_dim": 5,

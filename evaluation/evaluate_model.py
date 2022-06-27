@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import mean_absolute_error, mean_squared_error, \
     mean_absolute_percentage_error, r2_score
 
-from config import data_params
+from configs.config import data_params
 from data_creator import DataCreator
 from batch_generator import BatchGenerator
 
@@ -218,7 +218,7 @@ def evaluate(rebuild_data, cp_dir):
             data_length = experiment_params["data_length"]
 
         except FileNotFoundError:
-            from config import experiment_params, model_params
+            from configs.config import experiment_params, model_params
             data_length = experiment_params["data_length"]
             model_params = model_params[model_name]
 
