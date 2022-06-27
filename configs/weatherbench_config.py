@@ -9,7 +9,7 @@ experiment_params["data_length"] = 24  # in month
 experiment_params["val_ratio"] = 0.1
 experiment_params["test_ratio"] = 0.0
 experiment_params["normalize_flag"] = True
-experiment_params["model"] = "u_net"
+experiment_params["model"] = "traj_gru"
 
 # overwrite data parameters
 data_params["rebuild"] = False
@@ -39,7 +39,7 @@ model_params["weather_model"]["core"]["input_size"] = (32, 64)
 model_params["lstm"]["core"]["input_size"] = (32, 64)
 model_params["traj_gru"]["core"]["input_size"] = (32, 64)
 
-model_params["traj_gru"]["core"]["selected_dim"] = 13
+model_params["u_net"]["core"]["selected_dim"] = 13
 model_params["weather_model"]["core"]["selected_dim"] = [13]
 model_params["lstm"]["core"]["selected_dim"] = 13
 
