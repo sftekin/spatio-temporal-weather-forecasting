@@ -39,6 +39,14 @@ model_params["weather_model"]["core"]["input_size"] = (32, 64)
 model_params["lstm"]["core"]["input_size"] = (32, 64)
 model_params["traj_gru"]["core"]["input_size"] = (32, 64)
 
+model_params["traj_gru"]["core"]["selected_dim"] = 13
+model_params["weather_model"]["core"]["selected_dim"] = [13]
+model_params["lstm"]["core"]["selected_dim"] = 13
+
+model_params["weather_model"]["core"]["encoder_params"]["input_dim"] = 19
+model_params["convlstm"]["core"]["encoder_params"]["input_dim"] = 19
+model_params["traj_gru"]["core"]["encoder_params"]["input_dim"] = 19
+
 model_names.remove("u_net")
 for model_n in model_names:
     model_params[model_n]["core"]["window_in"] = model_params[model_n]["batch_gen"]["window_in_len"]
