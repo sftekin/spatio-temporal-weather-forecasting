@@ -124,8 +124,8 @@ model_params = {
     },
     "weather_model": {
         "batch_gen": {
-            # "input_dim": [0, 2, 3, 4, 7, 10, 11, 12, 13],  # indexes of selected features for input
-            # "output_dim": 10,  # indexes of selected features for output
+            # "input_dim": [0, 2, 3, 4, 7, 10, 11, 12, 13],  # indexes of selected features for era5
+            # "output_dim": 10,  # indexes of selected features for era5
             "input_dim": "all",  # indexes of selected features for weather bench
             "output_dim": 13,  # index for temperature in weather bench 13
             "window_in_len": 20,
@@ -135,11 +135,11 @@ model_params = {
             "stride": 1
         },
         "trainer": {
-            "num_epochs": 3,
+            "num_epochs": 50,
             "momentum": 0.7,
             "optimizer": "adam",
             "weight_decay": 0.00023,
-            "learning_rate": Param([0.01, 0.001, 0.0005, 0.00001]),
+            "learning_rate": Param([0.01, 0.001, 0.0005]),
             "clip": 5,
             "early_stop_tolerance": 4
         },

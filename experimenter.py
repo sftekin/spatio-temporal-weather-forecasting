@@ -16,7 +16,6 @@ from models.baseline.u_net import UNet
 from models.baseline.lstm import LSTMModel
 from models.baseline.traj_gru import TrajGRU
 
-
 model_dispatcher = {
     'moving_avg': MovingAvg,
     'convlstm': ConvLSTM,
@@ -89,7 +88,7 @@ def train_test(experiment_params, data_params, model_params):
                     best_scores["train"] = train_metric
                     best_scores["validation"] = val_metric
                     best_scores["train_val_loss"] = train_val_loss
-                    saving_checkpoint(save_dir, best_scores, model, trainer, batch_generator, config)
+                    _saving_checkpoint(save_dir, best_scores, model, trainer, batch_generator, config)
                 combination_num += 1
         best_trainer = Trainer(device=device, **best_trainer_param)
         print("--" * 20)
@@ -104,18 +103,18 @@ def train_test(experiment_params, data_params, model_params):
         eval_loss, eval_metric = best_trainer.evaluate(best_model, batch_generator)
         best_scores["evaluation"] = eval_metric
         best_scores["eval_loss"] = eval_loss
-        saving_checkpoint(save_dir, best_scores, best_model, best_trainer, batch_generator, config)
+        _saving_checkpoint(save_dir, best_scores, best_model, best_trainer, batch_generator, config)
 
         # perform test
         print("-*-" * 10)
         if batch_generator.dataset_dict['test'] is None:
-            print(f"Testing skipped since test_ratio is given {batch_generator.test_ratio}")
+            print(f"Testing skipped since test_ratio is {batch_generator.test_ratio}")
         else:
             print(f"TEST for the {date_range_str}")
             test_loss, test_metric = best_trainer.predict(best_model, batch_generator)
             best_scores["test"] = test_metric
             best_scores["test_loss"] = test_loss
-            saving_checkpoint(save_dir, best_scores, best_model, best_trainer, batch_generator, config)
+            _saving_checkpoint(save_dir, best_scores, best_model, best_trainer, batch_generator, config)
 
         # log the results
         print("-*-" * 10)
@@ -131,17 +130,34 @@ def train_test(experiment_params, data_params, model_params):
         break
 
 
-def inference_on_test(model_name, device, exp_num):
-    trainer, model, batch_generator = get_experiment_elements(model_name, device, exp_num)
+def inference_on_test(model_name, device, exp_num, test_data_folder, start_date_str, end_date_str):
+    trainer, model, dumped_generator = _get_experiment_elements(model_name, device, exp_num)
+
+    start_date = pd.to_datetime(start_date_str)
+    end_date = pd.to_datetime(end_date_str) - pd.DateOffset(hours=1)
+
+    path_list = DataCreator.get_file_paths(test_data_folder)
+    path_arr = DataCreator.sort_files_by_date(paths=path_list,
+                                              start_date=start_date,
+                                              end_date=end_date)
+
+    normalize_flag = dumped_generator.normalize_flag
+    params = dumped_generator.dataset_params
+    params["stride"] = params["window_out_len"]
+    batch_generator = BatchGenerator(weather_data=path_arr, val_ratio=0.0, test_ratio=1.0,
+                                     normalize_flag=normalize_flag, params=params)
+
+    print("-*-" * 20)
+    print(f"Inference on {test_data_folder} between {start_date_str} and {end_date_str} dates")
     test_loss, test_metric = trainer.predict(model, batch_generator)
 
     return test_loss, test_metric
 
 
-def get_experiment_elements(model_name, device, exp_num):
+def _get_experiment_elements(model_name, device, exp_num):
     if exp_num is None:
         raise KeyError("experiment number cannot be None")
-    model, trainer, batch_generator = load_checkpoint(model_name, exp_num)
+    model, trainer, batch_generator = _load_checkpoint(model_name, exp_num)
 
     model = model.to(device)
     if model_name in ["convlstm", "weather_model"]:
@@ -157,7 +173,7 @@ def get_experiment_elements(model_name, device, exp_num):
     return trainer, model, batch_generator
 
 
-def saving_checkpoint(save_dir, scores, model, trainer, batch_generator, config):
+def _saving_checkpoint(save_dir, scores, model, trainer, batch_generator, config):
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
     save_paths = [os.path.join(save_dir, path) for path in
@@ -168,7 +184,7 @@ def saving_checkpoint(save_dir, scores, model, trainer, batch_generator, config)
             pkl.dump(obj, file)
 
 
-def load_checkpoint(model_name, exp_num):
+def _load_checkpoint(model_name, exp_num):
     def load_obj(dir_path, obj_name):
         obj_path = os.path.join(dir_path, f"{obj_name}.pkl")
         with open(obj_path, "rb") as f:
@@ -187,6 +203,3 @@ def get_exp_count(model_name):
     save_dir = os.path.join('results', model_name)
     num_exp_dir = len(glob.glob(os.path.join(save_dir, 'exp_*')))
     return num_exp_dir
-
-
-

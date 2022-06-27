@@ -1,8 +1,6 @@
 import torch
 import numpy as np
 
-from torch.utils.data import Dataset
-
 
 class WeatherDataset:
     def __init__(self, weather_data, input_dim, output_dim, stride,
@@ -76,8 +74,8 @@ class WeatherDataset:
                 j += 1
             else:
                 all_data.append(np.stack(batch, axis=0))
-                batch = [in_data[i:i + self.total_window_len]]
-                j = 0
+                batch = [in_data[i:i+self.total_window_len]]
+                j = 1
 
         if len(batch) > 0:
             all_data.append(np.stack(batch, axis=0))
