@@ -5,7 +5,7 @@ from configs.config import experiment_params, data_params, model_params
 experiment_params["global_start_date"] = '2000-01-01'
 experiment_params["global_end_date"] = '2008-12-31'
 experiment_params["data_step"] = 6  # in month
-experiment_params["data_length"] = 3  # in month
+experiment_params["data_length"] = 12  # in month
 experiment_params["val_ratio"] = 0.1
 experiment_params["test_ratio"] = 0.1
 experiment_params["normalize_flag"] = True
