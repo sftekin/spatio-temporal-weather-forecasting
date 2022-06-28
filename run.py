@@ -29,14 +29,28 @@ def run_weatherbenc():
         "model_name": model_name,
         "start_date_str": "01-01-2017",
         "end_date_str": "01-01-2018",
-        "test_data_folder": "data/test_data",
+        "test_data_folder": "data/weatherbench/test_data",
         "exp_num": get_exp_count(model_name),  # get the last experiment
         # exp_number = 10  # or set it by yourself
     }
     run(run_params, experiment_type="inference", infer_params=inference_params)
 
 
-if __name__ == '__main__':
-    # perform experiments on weatherbench
-    run_weatherbenc()
+def run_highres():
+    from configs.higher_res_config import experiment_params, data_params, model_params
 
+    run_params = {
+        "model_params": model_params,
+        "experiment_params": experiment_params,
+        "data_params": data_params
+    }
+    # perform train test
+    run(run_params, experiment_type="train_test")
+
+
+if __name__ == '__main__':
+    # # perform experiments on weatherbench
+    # run_weatherbenc()
+
+    # perform experiments on highres
+    run_highres()
