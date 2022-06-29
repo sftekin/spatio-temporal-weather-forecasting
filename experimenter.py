@@ -4,6 +4,7 @@ import copy
 import pickle as pkl
 
 import pandas as pd
+import numpy as np
 
 from data_creator import DataCreator
 from batch_generator import BatchGenerator
@@ -117,12 +118,7 @@ def train_test(experiment_params, data_params, model_params):
             _saving_checkpoint(save_dir, best_scores, best_model, best_trainer, batch_generator, config)
 
         # log the results
-        print("-*-" * 10)
-        all_scores_list = [f"{key}:\t\t{best_trainer.get_metric_string(metrics)}"
-                           for key, metrics in best_scores.items() if "_" not in key]
-        all_scores_str = "\n".join(all_scores_list)
-        print(f"Experiment finished for the {date_range_str} the scores are: \n"
-              f"{all_scores_str}")
+        log_results(scores=best_scores, trainer=best_trainer, date_range_str=date_range_str)
 
         # # remove dump directory
         # shutil.rmtree(dump_file_dir)
@@ -151,7 +147,58 @@ def inference_on_test(model_name, device, exp_num, test_data_folder, start_date_
     print(f"Inference on {test_data_folder} between {start_date_str} and {end_date_str} dates")
     test_loss, test_metric = trainer.predict(model, batch_generator)
 
-    return test_loss, test_metric
+    weighted_rmse = calc_weighted_rmse(model, batch_generator, device)
+    test_metric["WeightedRMSE"] = weighted_rmse
+
+    # log the results
+    log_results(scores={"inference-test": test_metric},
+                trainer=trainer,
+                date_range_str=f"{start_date_str}_{end_date_str}")
+
+
+def calc_weighted_rmse(model, generator, device):
+    model.to(device)
+    model.eval()
+    running_error = 0
+    for idx, (x, y) in enumerate(generator.generate("test")):
+        if hasattr(model, 'hidden'):
+            hidden = model.init_hidden(batch_size=x.shape[0])
+        else:
+            hidden = None
+        # (b, t, m, n, d) -> (b, t, d, m, n)
+        x = x.permute(0, 1, 4, 2, 3).float().to(device)
+        y = y.permute(0, 1, 4, 2, 3).float().to(device)
+
+        pred = model.forward(x=x.clone(), hidden=hidden)
+
+        if generator.normalizer:
+            pred = generator.normalizer.inv_norm(pred, device)
+            y = generator.normalizer.inv_norm(y, device)
+
+        error = (y - pred) ** 2
+
+        # get latitude array
+        min_lat, max_lat = generator.normalizer.min_max[17]
+        lats_arr = x[0, 0, -2].detach().cpu().numpy() * max_lat[0, 0].numpy() + min_lat[0, 0].numpy()
+        weights = np.cos(np.deg2rad(lats_arr))
+        weights /= weights[:, 0].mean()
+        error_flatten = error.view(-1, *lats_arr.shape)
+
+        # calculate weighted error
+        weighted_error = error_flatten.detach().cpu().numpy() * np.expand_dims(weights, axis=0)
+        running_error += np.sqrt(weighted_error).mean()
+    running_error /= (idx + 1)
+
+    return running_error
+
+
+def log_results(scores, trainer, date_range_str):
+    print("-*-" * 10)
+    all_scores_list = [f"{key}:\t\t{trainer.get_metric_string(metrics)}"
+                       for key, metrics in scores.items() if "_" not in key]
+    all_scores_str = "\n".join(all_scores_list)
+    print(f"Experiment finished for the {date_range_str} the scores are: \n"
+          f"{all_scores_str}")
 
 
 def _get_experiment_elements(model_name, device, exp_num):

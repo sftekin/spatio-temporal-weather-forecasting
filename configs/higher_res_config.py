@@ -9,7 +9,7 @@ experiment_params["data_length"] = 12  # in month
 experiment_params["val_ratio"] = 0.1
 experiment_params["test_ratio"] = 0.1
 experiment_params["normalize_flag"] = True
-experiment_params["model"] = "weather_model"
+experiment_params["model"] = "moving_avg"
 
 # overwrite data parameters
 data_params["rebuild"] = False

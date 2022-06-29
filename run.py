@@ -31,7 +31,7 @@ def run_weatherbenc():
         "end_date_str": "01-01-2018",
         "test_data_folder": "data/weatherbench/test_data",
         "exp_num": get_exp_count(model_name),  # get the last experiment
-        # exp_number = 10  # or set it by yourself
+        # "exp_num": 1  # or set it by yourself
     }
     run(run_params, experiment_type="inference", infer_params=inference_params)
 
