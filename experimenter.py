@@ -4,7 +4,6 @@ import copy
 import pickle as pkl
 
 import pandas as pd
-import numpy as np
 
 from data_creator import DataCreator
 from batch_generator import BatchGenerator
@@ -82,13 +81,14 @@ def train_test(experiment_params, data_params, model_params):
 
                 criterion = val_metric[selected_criterion]
                 if criterion < best_val_score:
-                    best_val_score = criterion
+                    best_val_score = copy.deepcopy(criterion)
                     best_model = copy.deepcopy(model)
                     best_trainer_param = trainer_param
                     best_core_param = core_param
                     best_scores["train"] = train_metric
                     best_scores["validation"] = val_metric
                     best_scores["train_val_loss"] = train_val_loss
+                    print(f"New best validation score reached, {best_val_score}. Saving...")
                     _saving_checkpoint(save_dir, best_scores, model, trainer, batch_generator, config)
                 combination_num += 1
         best_trainer = Trainer(device=device, **best_trainer_param)
@@ -126,72 +126,6 @@ def train_test(experiment_params, data_params, model_params):
         break
 
 
-def inference_on_test(model_name, device, exp_num, test_data_folder, start_date_str, end_date_str):
-    trainer, model, dumped_generator = _get_experiment_elements(model_name, device, exp_num)
-
-    start_date = pd.to_datetime(start_date_str)
-    end_date = pd.to_datetime(end_date_str) - pd.DateOffset(hours=1)
-
-    path_list = DataCreator.get_file_paths(test_data_folder)
-    path_arr = DataCreator.sort_files_by_date(paths=path_list,
-                                              start_date=start_date,
-                                              end_date=end_date)
-
-    normalize_flag = dumped_generator.normalize_flag
-    params = dumped_generator.dataset_params
-    params["stride"] = params["window_out_len"]
-    batch_generator = BatchGenerator(weather_data=path_arr, val_ratio=0.0, test_ratio=1.0,
-                                     normalize_flag=normalize_flag, params=params)
-
-    print("-*-" * 20)
-    print(f"Inference on {test_data_folder} between {start_date_str} and {end_date_str} dates")
-    test_loss, test_metric = trainer.predict(model, batch_generator)
-
-    weighted_rmse = calc_weighted_rmse(model, batch_generator, device)
-    test_metric["WeightedRMSE"] = weighted_rmse
-
-    # log the results
-    log_results(scores={"inference-test": test_metric},
-                trainer=trainer,
-                date_range_str=f"{start_date_str}_{end_date_str}")
-
-
-def calc_weighted_rmse(model, generator, device):
-    model.to(device)
-    model.eval()
-    running_error = 0
-    for idx, (x, y) in enumerate(generator.generate("test")):
-        if hasattr(model, 'hidden'):
-            hidden = model.init_hidden(batch_size=x.shape[0])
-        else:
-            hidden = None
-        # (b, t, m, n, d) -> (b, t, d, m, n)
-        x = x.permute(0, 1, 4, 2, 3).float().to(device)
-        y = y.permute(0, 1, 4, 2, 3).float().to(device)
-
-        pred = model.forward(x=x.clone(), hidden=hidden)
-
-        if generator.normalizer:
-            pred = generator.normalizer.inv_norm(pred, device)
-            y = generator.normalizer.inv_norm(y, device)
-
-        error = (y - pred) ** 2
-
-        # get latitude array
-        min_lat, max_lat = generator.normalizer.min_max[17]
-        lats_arr = x[0, 0, -2].detach().cpu().numpy() * max_lat[0, 0].numpy() + min_lat[0, 0].numpy()
-        weights = np.cos(np.deg2rad(lats_arr))
-        weights /= weights[:, 0].mean()
-        error_flatten = error.view(-1, *lats_arr.shape)
-
-        # calculate weighted error
-        weighted_error = error_flatten.detach().cpu().numpy() * np.expand_dims(weights, axis=0)
-        running_error += np.sqrt(weighted_error).mean()
-    running_error /= (idx + 1)
-
-    return running_error
-
-
 def log_results(scores, trainer, date_range_str):
     print("-*-" * 10)
     all_scores_list = [f"{key}:\t\t{trainer.get_metric_string(metrics)}"
@@ -201,7 +135,7 @@ def log_results(scores, trainer, date_range_str):
           f"{all_scores_str}")
 
 
-def _get_experiment_elements(model_name, device, exp_num):
+def get_experiment_elements(model_name, device, exp_num):
     if exp_num is None:
         raise KeyError("experiment number cannot be None")
     model, trainer, batch_generator = _load_checkpoint(model_name, exp_num)
@@ -218,6 +152,12 @@ def _get_experiment_elements(model_name, device, exp_num):
     trainer.device = device
 
     return trainer, model, batch_generator
+
+
+def get_exp_count(model_name):
+    save_dir = os.path.join('results', model_name)
+    num_exp_dir = len(glob.glob(os.path.join(save_dir, 'exp_*')))
+    return num_exp_dir
 
 
 def _saving_checkpoint(save_dir, scores, model, trainer, batch_generator, config):
@@ -244,9 +184,3 @@ def _load_checkpoint(model_name, exp_num):
     batch_generator = load_obj(exps_dir, "batch_generator")
 
     return model, trainer, batch_generator
-
-
-def get_exp_count(model_name):
-    save_dir = os.path.join('results', model_name)
-    num_exp_dir = len(glob.glob(os.path.join(save_dir, 'exp_*')))
-    return num_exp_dir

@@ -9,6 +9,7 @@ experiment_params["data_length"] = 24  # in month
 experiment_params["val_ratio"] = 0.1
 experiment_params["test_ratio"] = 0.0
 experiment_params["normalize_flag"] = True
+experiment_params["device"] = "cuda"
 experiment_params["model"] = "weather_model"
 
 # overwrite data parameters

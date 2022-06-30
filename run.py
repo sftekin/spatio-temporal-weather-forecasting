@@ -1,4 +1,5 @@
-from experimenter import train_test, inference_on_test, get_exp_count
+from experimenter import train_test, get_exp_count
+from inference import inference_on_test
 
 
 def run(run_params, experiment_type="train_test", infer_params=None):
@@ -49,8 +50,8 @@ def run_highres():
 
 
 if __name__ == '__main__':
-    # # perform experiments on weatherbench
-    # run_weatherbenc()
+    # perform experiments on weatherbench
+    run_weatherbenc()
 
-    # perform experiments on highres
-    run_highres()
+    # # perform experiments on highres
+    # run_highres()
