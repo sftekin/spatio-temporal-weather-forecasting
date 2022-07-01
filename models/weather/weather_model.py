@@ -97,7 +97,7 @@ class WeatherModel(nn.Module):
         :return: (b, t, m, n, d)
         """
         # forward encoder
-        _, cur_states = self.__forward_encoder(x, hidden)
+        _, cur_states = self.__forward_encoder(x.clone(), hidden)
 
         # reverse the state list
         cur_states = [(torch.sum(cur_states[i - 1][0], dim=1),

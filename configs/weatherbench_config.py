@@ -19,15 +19,15 @@ data_params["dump_data_folder"] = "weatherbench/train_data"
 # overwrite model parameters
 model_names = ["moving_avg", "convlstm", "u_net", "weather_model", "lstm", "traj_gru"]
 for model_n in model_names:
-    model_params[model_n]["batch_gen"]["input_dim"] = "all"
-    model_params[model_n]["batch_gen"]["output_dim"] = 13
-    model_params[model_n]["batch_gen"]["window_in_len"] = 20
-    model_params[model_n]["batch_gen"]["window_out_len"] = 72
-    model_params[model_n]["batch_gen"]["batch_size"] = 8
-    model_params[model_n]["trainer"]["num_epochs"] = 50
+    model_params[model_n]["batch_gen"]["input_dim"] = [0, 7, 8, 13]
+    model_params[model_n]["batch_gen"]["output_dim"] = [0, 7, 8, 13]
+    model_params[model_n]["batch_gen"]["window_in_len"] = 6
+    model_params[model_n]["batch_gen"]["window_out_len"] = 6
+    model_params[model_n]["batch_gen"]["batch_size"] = 32
+    model_params[model_n]["trainer"]["num_epochs"] = 1
 
 
-model_params["weather_model"]["trainer"]["learning_rate"] = Param([0.01, 0.001, 0.0005])
+model_params["weather_model"]["trainer"]["learning_rate"] = Param([0.01])
 model_params["u_net"]["trainer"]["learning_rate"] = Param([0.01, 0.001, 0.0005, 0.00001])
 model_params["convlstm"]["trainer"]["learning_rate"] = Param([0.01, 0.001, 0.0005, 0.00001])
 model_params["moving_avg"]["trainer"]["learning_rate"] = Param([0.01, 0.001, 0.0005, 0.00001])
@@ -40,10 +40,11 @@ model_params["lstm"]["core"]["input_size"] = (32, 64)
 model_params["traj_gru"]["core"]["input_size"] = (32, 64)
 
 model_params["u_net"]["core"]["selected_dim"] = 13
-model_params["weather_model"]["core"]["selected_dim"] = [13]
+model_params["weather_model"]["core"]["selected_dim"] = [0, 1, 2, 3]
 model_params["lstm"]["core"]["selected_dim"] = 13
 
-model_params["weather_model"]["core"]["encoder_params"]["input_dim"] = 19
+model_params["weather_model"]["core"]["encoder_params"]["input_dim"] = \
+    len(model_params["weather_model"]["batch_gen"]["input_dim"])
 model_params["convlstm"]["core"]["encoder_params"]["input_dim"] = 19
 model_params["traj_gru"]["core"]["encoder_params"]["input_dim"] = 19
 
@@ -54,3 +55,11 @@ for model_n in model_names:
 
 model_params["u_net"]["core"]["in_channels"] = model_params["u_net"]["batch_gen"]["window_in_len"]
 model_params["u_net"]["core"]["out_channels"] = model_params["u_net"]["batch_gen"]["window_out_len"]
+model_params["weather_model"]["core"]["input_attn_params"]["input_dim"] = \
+    model_params["weather_model"]["batch_gen"]["window_in_len"]
+
+model_params["weather_model"]["core"]["output_conv_params"]["out_channel"] = \
+    len(model_params["weather_model"]["batch_gen"]["output_dim"])
+
+model_params["weather_model"]["core"]["decoder_params"]["input_dim"] = \
+    len(model_params["weather_model"]["core"]["selected_dim"])

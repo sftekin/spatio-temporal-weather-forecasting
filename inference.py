@@ -9,7 +9,9 @@ from data_creator import DataCreator
 from batch_generator import BatchGenerator
 
 
-def inference_on_test(model_name, device, exp_num, test_data_folder, start_date_str, end_date_str):
+# TODO: Make here a class, write a predict loop with forecast horizon and iterative mode. Ask lat array if weighted true
+
+def inference_on_test(model_name, device, exp_num, test_data_folder, start_date_str, end_date_str, forecast_horizon):
     trainer, model, dumped_generator = get_experiment_elements(model_name, device, exp_num)
 
     start_date = pd.to_datetime(start_date_str)
@@ -37,8 +39,8 @@ def inference_on_test(model_name, device, exp_num, test_data_folder, start_date_
 
     # log the results
     log_results(scores={"inference-test": test_metric},
-                 trainer=trainer,
-                 date_range_str=f"{start_date_str}_{end_date_str}")
+                trainer=trainer,
+                date_range_str=f"{start_date_str}_{end_date_str}")
 
     # save metrics
     metric_dir = os.path.join('results', model_name, f"exp_{exp_num}", "test_inference_scores.pkl")

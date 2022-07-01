@@ -222,7 +222,7 @@ class Trainer:
 
         metric_scores = {}
         for key, metric_fun in metric_collection.items():
-            metric_scores[key] = metric_fun(preds=pred, target=y).detach().cpu().numpy()
+            metric_scores[key] = metric_fun(preds=pred[:, :, -1], target=y[:, :, -1]).detach().cpu().numpy()
 
         return metric_scores
 
