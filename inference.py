@@ -3,6 +3,9 @@ import pickle as pkl
 
 import pandas as pd
 import numpy as np
+import torch
+from torchmetrics.functional import mean_absolute_percentage_error, \
+    mean_absolute_error, mean_squared_error
 
 from experimenter import get_experiment_elements, log_results
 from data_creator import DataCreator
@@ -11,7 +14,8 @@ from batch_generator import BatchGenerator
 
 # TODO: Make here a class, write a predict loop with forecast horizon and iterative mode. Ask lat array if weighted true
 
-def inference_on_test(model_name, device, exp_num, test_data_folder, start_date_str, end_date_str, forecast_horizon):
+def inference_on_test(model_name, device, exp_num, test_data_folder,
+                      start_date_str, end_date_str, forecast_horizon, selected_dim):
     trainer, model, dumped_generator = get_experiment_elements(model_name, device, exp_num)
 
     start_date = pd.to_datetime(start_date_str)
@@ -23,32 +27,34 @@ def inference_on_test(model_name, device, exp_num, test_data_folder, start_date_
                                               end_date=end_date)
 
     normalize_flag = dumped_generator.normalize_flag
+    window_out_len = dumped_generator.dataset_params["window_out_len"]
     params = dumped_generator.dataset_params
-    params["stride"] = params["window_out_len"]
+    params["stride"] = forecast_horizon
+    params["window_out_len"] = forecast_horizon
     batch_generator = BatchGenerator(weather_data=path_arr, val_ratio=0.0, test_ratio=1.0,
                                      normalize_flag=normalize_flag, params=params)
 
     print("-*-" * 20)
     print(f"Inference on {test_data_folder} between {start_date_str} and {end_date_str} dates")
-    test_loss, test_metric = trainer.predict(model, batch_generator)
+    if window_out_len < forecast_horizon:
+        print(f"Performing iterative prediction since window_out "
+              f"({window_out_len}) < forecast_horizon ({forecast_horizon})")
 
-    ts_metrics, all_metrics = calc_weighted_metrics(model, batch_generator, device)
-    test_metric["WeightedMAE"] = all_metrics[0]
-    test_metric["WeightedRMSE"] = all_metrics[1]
-    test_metric["WeightedACC"] = all_metrics[2]
+    with torch.no_grad():
+        ts_metrics, all_metrics = calc_metric_scores(model, batch_generator, device, selected_dim)
 
     # log the results
-    log_results(scores={"inference-test": test_metric},
+    log_results(scores={"inference-test": all_metrics},
                 trainer=trainer,
                 date_range_str=f"{start_date_str}_{end_date_str}")
 
     # save metrics
-    metric_dir = os.path.join('results', model_name, f"exp_{exp_num}", "test_inference_scores.pkl")
+    metric_dir = os.path.join('results', model_name, f"exp_{exp_num}", "test_inference_metric_scores.pkl")
     with open(metric_dir, "wb") as f:
-        pkl.dump(test_metric, f)
+        pkl.dump(all_metrics, f)
 
 
-def calc_weighted_metrics(model, generator, device):
+def calc_metric_scores(model, generator, device, selected_dim):
     model.to(device)
     model.eval()
     running_preds, running_labels, weights = [], [], None
@@ -61,12 +67,6 @@ def calc_weighted_metrics(model, generator, device):
         x = x.permute(0, 1, 4, 2, 3).float().to(device)
         y = y.permute(0, 1, 4, 2, 3).float().to(device)
 
-        pred = model.forward(x=x.clone(), hidden=hidden)
-
-        if generator.normalizer:
-            pred = generator.normalizer.inv_norm(pred, device)
-            y = generator.normalizer.inv_norm(y, device)
-
         # get latitude array
         if idx == 0:
             min_lat, max_lat = generator.normalizer.min_max[17]
@@ -75,18 +75,43 @@ def calc_weighted_metrics(model, generator, device):
             weights /= weights[:, 0].mean()
             weights = np.expand_dims(weights, axis=0)
 
-        # store the pred and target
-        running_preds.append(pred.detach().cpu().numpy())
-        running_labels.append(y.detach().cpu().numpy())
+        # get prediction
+        pred = model.forward(x=x.clone(), hidden=hidden)
+        if pred.shape[1] < y.shape[1]:
+            # iterative mode
+            pred_list = [pred.clone()]
+            for t in range(pred.shape[1], y.shape[1], pred.shape[1]):
+                x = pred
+                hidden = model.init_hidden(batch_size=x.shape[0]) if hidden is not None else None
+                pred = model.forward(x=x.clone(), hidden=hidden)
+                pred_list.append(pred)
+            pred = torch.cat(pred_list, dim=1)
 
-    ts_metrics, all_metrics = _calc_weighted_diff_meterics(running_preds, running_labels, weights)
+        if generator.normalizer:
+            pred = generator.normalizer.inv_norm(pred, device)
+            y = generator.normalizer.inv_norm(y, device)
+
+        # store the pred and target
+        running_preds.append(pred[:, :, [selected_dim]].detach().cpu())
+        running_labels.append(y[:, :, [selected_dim]].detach().cpu())
+
+    pred_all = torch.cat(running_preds, dim=0)
+    target_all = torch.cat(running_labels, dim=0)
+
+    ts_metrics, all_metrics = _calc_metrics(pred=pred_all, target=target_all)
+    ts_weighted_scores, all_weighted_scores = _calc_weighted_meterics(pred_all.numpy(),
+                                                                      target_all.numpy(), weights)
+
+    weighted_metric_names = ["WeightedMAE", "WeightedRMSE", "WeightedACC"]
+    for i, m_name in enumerate(weighted_metric_names):
+        all_metrics[m_name] = all_weighted_scores[i]
+        ts_metrics[m_name] = ts_weighted_scores[:, i]
 
     return ts_metrics, all_metrics
 
 
-def _calc_weighted_diff_meterics(pred, target, weights):
-    pred = np.concatenate(pred, axis=0)
-    target = np.concatenate(target, axis=0)
+def _calc_weighted_meterics(pred, target, weights):
+
     batch_count, seq_len, d_dim, height, width = pred.shape
 
     # calculate mae, rmse
@@ -123,3 +148,22 @@ def _calc_weighted_diff_meterics(pred, target, weights):
                             np.sqrt((weights * pred_diff[:, t] ** 2).sum() * (weights * target_diff[:, t] ** 2).sum())
 
     return ts_metrics, (all_mae, all_rmse, all_acc)
+
+
+def _calc_metrics(pred, target):
+    metric_collection = {
+        "MSE": mean_squared_error,
+        "MAE": mean_absolute_error,
+        "MAPE": mean_absolute_percentage_error,
+        "RMSE": lambda preds, target: torch.sqrt(mean_squared_error(preds, target))
+    }
+
+    all_metrics, ts_metrics = {}, {}
+    for key, func in metric_collection.items():
+        all_metrics[key] = func(preds=pred, target=target).numpy()
+        ts_list = []
+        for t in range(pred.shape[1]):
+            ts_list.append(func(preds=pred[:, t], target=target[:, t]).numpy())
+        ts_metrics[key] = ts_list
+
+    return ts_metrics, all_metrics

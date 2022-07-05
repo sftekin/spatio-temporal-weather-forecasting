@@ -24,10 +24,9 @@ for model_n in model_names:
     model_params[model_n]["batch_gen"]["window_in_len"] = 6
     model_params[model_n]["batch_gen"]["window_out_len"] = 6
     model_params[model_n]["batch_gen"]["batch_size"] = 32
-    model_params[model_n]["trainer"]["num_epochs"] = 1
+    model_params[model_n]["trainer"]["num_epochs"] = 50
 
-
-model_params["weather_model"]["trainer"]["learning_rate"] = Param([0.01])
+model_params["weather_model"]["trainer"]["learning_rate"] = Param([0.01, 0.001, 0.0005])
 model_params["u_net"]["trainer"]["learning_rate"] = Param([0.01, 0.001, 0.0005, 0.00001])
 model_params["convlstm"]["trainer"]["learning_rate"] = Param([0.01, 0.001, 0.0005, 0.00001])
 model_params["moving_avg"]["trainer"]["learning_rate"] = Param([0.01, 0.001, 0.0005, 0.00001])
@@ -41,6 +40,7 @@ model_params["traj_gru"]["core"]["input_size"] = (32, 64)
 
 model_params["u_net"]["core"]["selected_dim"] = 13
 model_params["weather_model"]["core"]["selected_dim"] = [0, 1, 2, 3]
+model_params["weather_model"]["trainer"]["selected_dim"] = -1  # index of temperature
 model_params["lstm"]["core"]["selected_dim"] = 13
 
 model_params["weather_model"]["core"]["encoder_params"]["input_dim"] = \

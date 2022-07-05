@@ -19,7 +19,8 @@ def run_weatherbenc():
         "test_data_folder": "data/weatherbench/test_data",
         "exp_num": get_exp_count(model_name),  # get the last experiment
         # "exp_num": 1  # or set it by yourself
-        "forecast_horizon": 72
+        "forecast_horizon": 72,
+        "selected_dim": -1  # index position of the selected feature
     }
     inference_on_test(device=experiment_params["device"], **inference_params)
 

@@ -8,7 +8,7 @@ from torchmetrics.functional import mean_absolute_percentage_error, mean_absolut
 
 class Trainer:
     def __init__(self, num_epochs, early_stop_tolerance, clip, optimizer,
-                 learning_rate, weight_decay, momentum, device):
+                 learning_rate, weight_decay, momentum, device, selected_dim=-1):
         self.num_epochs = num_epochs
         self.clip = clip
         self.optimizer = optimizer
@@ -18,6 +18,7 @@ class Trainer:
         self.tolerance = early_stop_tolerance
         self.device = torch.device(device)
         self.criterion = nn.MSELoss()
+        self.selected_dim = selected_dim
         self.metric_names = ["MSE", "MAE", "MAPE", "RMSE"]
 
     def train(self, model, batch_generator):
@@ -82,7 +83,7 @@ class Trainer:
 
         # train the model on the set of train+eval with the
         # number of epochs that is divided by 4
-        num_epochs = max(self.num_epochs // 4, 1)
+        num_epochs = max(self.num_epochs // 10, 1)
         optimizer = self.__get_optimizer(model)
         for epoch in range(num_epochs):
             # train + val
@@ -206,13 +207,13 @@ class Trainer:
             pred = generator.normalizer.inv_norm(pred, self.device)
             y = generator.normalizer.inv_norm(y, self.device)
 
-        metric_scores = self.__calc_metrics(pred=pred, y=y)
+        metric_scores = self.__calc_metrics(pred=pred, y=y, selected_dim=self.selected_dim)
         loss = self.criterion(pred, y).detach().cpu().numpy()
 
         return loss, metric_scores
 
     @staticmethod
-    def __calc_metrics(pred, y):
+    def __calc_metrics(pred, y, selected_dim):
         metric_collection = {
             "MSE": mean_squared_error,
             "MAE": mean_absolute_error,
@@ -222,7 +223,8 @@ class Trainer:
 
         metric_scores = {}
         for key, metric_fun in metric_collection.items():
-            metric_scores[key] = metric_fun(preds=pred[:, :, -1], target=y[:, :, -1]).detach().cpu().numpy()
+            metric_scores[key] = metric_fun(preds=pred[:, :, selected_dim],
+                                            target=y[:, :, selected_dim]).detach().cpu().numpy()
 
         return metric_scores
 
