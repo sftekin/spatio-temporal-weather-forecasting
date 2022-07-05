@@ -12,8 +12,6 @@ from data_creator import DataCreator
 from batch_generator import BatchGenerator
 
 
-# TODO: Make here a class, write a predict loop with forecast horizon and iterative mode. Ask lat array if weighted true
-
 def inference_on_test(model_name, device, exp_num, test_data_folder,
                       start_date_str, end_date_str, forecast_horizon, selected_dim):
     trainer, model, dumped_generator = get_experiment_elements(model_name, device, exp_num)
@@ -67,20 +65,12 @@ def calc_metric_scores(model, generator, device, selected_dim):
         x = x.permute(0, 1, 4, 2, 3).float().to(device)
         y = y.permute(0, 1, 4, 2, 3).float().to(device)
 
-        # get latitude array
-        if idx == 0:
-            min_lat, max_lat = generator.normalizer.min_max[17]
-            lats_arr = x[0, 0, -2].detach().cpu().numpy() * max_lat[0, 0].numpy() + min_lat[0, 0].numpy()
-            weights = np.cos(np.deg2rad(lats_arr))
-            weights /= weights[:, 0].mean()
-            weights = np.expand_dims(weights, axis=0)
-
         # get prediction
         pred = model.forward(x=x.clone(), hidden=hidden)
         if pred.shape[1] < y.shape[1]:
             # iterative mode
             pred_list = [pred.clone()]
-            for t in range(pred.shape[1], y.shape[1], pred.shape[1]):
+            for _ in range(pred.shape[1], y.shape[1], pred.shape[1]):
                 x = pred
                 hidden = model.init_hidden(batch_size=x.shape[0]) if hidden is not None else None
                 pred = model.forward(x=x.clone(), hidden=hidden)
@@ -95,8 +85,15 @@ def calc_metric_scores(model, generator, device, selected_dim):
         running_preds.append(pred[:, :, [selected_dim]].detach().cpu())
         running_labels.append(y[:, :, [selected_dim]].detach().cpu())
 
+    # concat all pred and targets
     pred_all = torch.cat(running_preds, dim=0)
     target_all = torch.cat(running_labels, dim=0)
+
+    # calculate weights for weighted metrics
+    lats_arr = np.load(os.path.join("resources", "lat_arr.npy"))
+    weights = np.cos(np.deg2rad(lats_arr))
+    weights /= weights[:, 0].mean()
+    weights = np.expand_dims(weights, axis=0)
 
     ts_metrics, all_metrics = _calc_metrics(pred=pred_all, target=target_all)
     ts_weighted_scores, all_weighted_scores = _calc_weighted_meterics(pred_all.numpy(),

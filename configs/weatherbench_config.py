@@ -10,7 +10,7 @@ experiment_params["val_ratio"] = 0.1
 experiment_params["test_ratio"] = 0.0
 experiment_params["normalize_flag"] = True
 experiment_params["device"] = "cuda"
-experiment_params["model"] = "weather_model"
+experiment_params["model"] = "convlstm"
 
 # overwrite data parameters
 data_params["rebuild"] = False
@@ -38,14 +38,16 @@ model_params["weather_model"]["core"]["input_size"] = (32, 64)
 model_params["lstm"]["core"]["input_size"] = (32, 64)
 model_params["traj_gru"]["core"]["input_size"] = (32, 64)
 
-model_params["u_net"]["core"]["selected_dim"] = 13
+model_params["u_net"]["core"]["selected_dim"] = 0  # index of temperature
 model_params["weather_model"]["core"]["selected_dim"] = [0, 1, 2, 3]
 model_params["weather_model"]["trainer"]["selected_dim"] = -1  # index of temperature
+model_params["convlstm"]["trainer"]["selected_dim"] = -1  # index of temperature
 model_params["lstm"]["core"]["selected_dim"] = 13
 
 model_params["weather_model"]["core"]["encoder_params"]["input_dim"] = \
     len(model_params["weather_model"]["batch_gen"]["input_dim"])
-model_params["convlstm"]["core"]["encoder_params"]["input_dim"] = 19
+model_params["convlstm"]["core"]["encoder_params"]["input_dim"] = \
+    len(model_params["convlstm"]["batch_gen"]["input_dim"])
 model_params["traj_gru"]["core"]["encoder_params"]["input_dim"] = 19
 
 model_names.remove("u_net")
@@ -60,6 +62,10 @@ model_params["weather_model"]["core"]["input_attn_params"]["input_dim"] = \
 
 model_params["weather_model"]["core"]["output_conv_params"]["out_channel"] = \
     len(model_params["weather_model"]["batch_gen"]["output_dim"])
-
 model_params["weather_model"]["core"]["decoder_params"]["input_dim"] = \
     len(model_params["weather_model"]["core"]["selected_dim"])
+
+model_params["convlstm"]["core"]["encoder_params"]["hidden_dims"] = \
+    [len(model_params["convlstm"]["batch_gen"]["input_dim"])]
+model_params["convlstm"]["core"]["decoder_params"]["hidden_dims"] = \
+    [len(model_params["convlstm"]["batch_gen"]["output_dim"])]
