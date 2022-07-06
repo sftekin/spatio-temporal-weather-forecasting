@@ -108,7 +108,6 @@ def calc_metric_scores(model, generator, device, selected_dim):
 
 
 def _calc_weighted_meterics(pred, target, weights):
-
     batch_count, seq_len, d_dim, height, width = pred.shape
 
     # calculate mae, rmse
