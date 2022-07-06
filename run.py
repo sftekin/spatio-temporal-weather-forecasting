@@ -11,7 +11,7 @@ def run_weatherbenc():
                model_params=model_params)
 
     # perform inference on test
-    model_name = "u_net"
+    model_name = "weather_model"
     inference_params = {
         "model_name": model_name,
         "start_date_str": "01-01-2017",

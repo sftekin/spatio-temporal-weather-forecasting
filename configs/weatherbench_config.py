@@ -10,7 +10,7 @@ experiment_params["val_ratio"] = 0.1
 experiment_params["test_ratio"] = 0.0
 experiment_params["normalize_flag"] = True
 experiment_params["device"] = "cuda"
-experiment_params["model"] = "u_net"
+experiment_params["model"] = "weather_model"
 
 # overwrite data parameters
 data_params["rebuild"] = False
@@ -19,11 +19,11 @@ data_params["dump_data_folder"] = "weatherbench/train_data"
 # overwrite model parameters
 model_names = ["moving_avg", "convlstm", "u_net", "weather_model", "lstm", "traj_gru"]
 for model_n in model_names:
-    model_params[model_n]["batch_gen"]["input_dim"] = [13]
-    model_params[model_n]["batch_gen"]["output_dim"] = [13]
-    model_params[model_n]["batch_gen"]["window_in_len"] = 20
-    model_params[model_n]["batch_gen"]["window_out_len"] = 72
-    model_params[model_n]["batch_gen"]["batch_size"] = 8
+    model_params[model_n]["batch_gen"]["input_dim"] = [0, 7, 8, 13]
+    model_params[model_n]["batch_gen"]["output_dim"] = [0, 7, 8, 13]
+    model_params[model_n]["batch_gen"]["window_in_len"] = 6
+    model_params[model_n]["batch_gen"]["window_out_len"] = 6
+    model_params[model_n]["batch_gen"]["batch_size"] = 32
     model_params[model_n]["trainer"]["num_epochs"] = 50
 
 model_params["weather_model"]["trainer"]["learning_rate"] = Param([0.01, 0.001, 0.0005])
@@ -38,7 +38,7 @@ model_params["weather_model"]["core"]["input_size"] = (32, 64)
 model_params["lstm"]["core"]["input_size"] = (32, 64)
 model_params["traj_gru"]["core"]["input_size"] = (32, 64)
 
-model_params["u_net"]["core"]["selected_dim"] = 0  # index of temperature
+model_params["u_net"]["core"]["selected_dim"] = 13  # index of temperature
 model_params["weather_model"]["core"]["selected_dim"] = [0, 1, 2, 3]
 model_params["weather_model"]["trainer"]["selected_dim"] = -1  # index of temperature
 model_params["convlstm"]["trainer"]["selected_dim"] = -1  # index of temperature
