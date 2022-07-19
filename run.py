@@ -5,10 +5,10 @@ from inference import inference_on_test
 def run_weatherbenc():
     from configs.weatherbench_config import experiment_params, data_params, model_params
 
-    # perform train test
-    train_test(experiment_params=experiment_params,
-               data_params=data_params,
-               model_params=model_params)
+    # # perform train test
+    # train_test(experiment_params=experiment_params,
+    #            data_params=data_params,
+    #            model_params=model_params)
 
     # perform inference on test
     model_name = "weather_model"
