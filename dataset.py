@@ -3,8 +3,8 @@ import numpy as np
 
 
 class WeatherDataset:
-    def __init__(self, weather_data, input_dim, output_dim, stride,
-                 window_in_len, window_out_len, batch_size, normalizer, shuffle):
+    def __init__(self, weather_data, input_dim, output_dim, stride, window_in_len, window_out_len, batch_size,
+                 normalizer, shuffle, temporal_freq=1, max_temporal_freq=1):
         """
 
         :param input_dim:
@@ -25,6 +25,11 @@ class WeatherDataset:
         self.num_iter = 0
         self.normalizer = normalizer
         self.shuffle = shuffle
+        self.temporal_freq = temporal_freq
+        self.max_temporal_freq = max_temporal_freq
+        if self.temporal_freq < self.max_temporal_freq:
+            raise KeyError(f"Temporal frequency {temporal_freq} cannot be smaller"
+                           f" than the maximum temporal frequency {max_temporal_freq}")
 
     def next(self):
         """
@@ -35,10 +40,16 @@ class WeatherDataset:
         :return: x, y
         :rtype: torch.tensor, torch.tensor
         """
-        weather_data = self.__create_buffer(in_data=self.weather_data)
+        if self.temporal_freq == self.max_temporal_freq:
+            weather_data = self.__create_buffer(in_data=self.weather_data)
+        else:
+            weather_data = []
+            # freq =   # we assume we work on daily data maximum
+            for i in range(self.temporal_freq):
+                chunk = self.__create_buffer(in_data=self.weather_data[i::self.temporal_freq])
+                weather_data += chunk
         self.num_iter = len(weather_data)
 
-        prev_batch = None
         for i in range(self.num_iter):
             batch_data = torch.from_numpy(self.__load_batch(batch=weather_data[i]))
 
@@ -68,13 +79,13 @@ class WeatherDataset:
 
         all_data, batch = [], []
         j = 0
-        for i in range(0, total_frame-self.total_window_len, self.stride):
+        for i in range(0, total_frame - self.total_window_len, self.stride):
             if j < self.batch_size:
-                batch.append(in_data[i:i+self.total_window_len])
+                batch.append(in_data[i:i + self.total_window_len])
                 j += 1
             else:
                 all_data.append(np.stack(batch, axis=0))
-                batch = [in_data[i:i+self.total_window_len]]
+                batch = [in_data[i:i + self.total_window_len]]
                 j = 1
 
         if len(batch) > 0:

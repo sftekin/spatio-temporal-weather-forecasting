@@ -47,9 +47,10 @@ def inference_on_test(model_name, device, exp_num, test_data_folder,
                 date_range_str=f"{start_date_str}_{end_date_str}")
 
     # save metrics
-    metric_dir = os.path.join('results', model_name, f"exp_{exp_num}", "test_inference_metric_scores.pkl")
+    metric_dir = os.path.join('results', model_name, f"exp_{exp_num}", "test_scores.pkl")
+    scores = {"ts_metrics": ts_metrics, "all_metrics": all_metrics}
     with open(metric_dir, "wb") as f:
-        pkl.dump(all_metrics, f)
+        pkl.dump(scores, f)
 
 
 def calc_metric_scores(model, generator, device, selected_dim):

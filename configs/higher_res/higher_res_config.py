@@ -16,6 +16,10 @@ experiment_params["model"] = "moving_avg"
 data_params["rebuild"] = False
 data_params["dump_data_folder"] = "data_dump"
 
+# Order of features in the input tensors are:
+# ['d', 'cc', 'z', 'pv', 'r', 'ciwc', 'clwc', 'q', 'crwc', 'cswc', 't', 'u', 'v', 'w']
+# where "t" is the temperature and at the 13th index
+
 # overwrite model parameters
 model_names = ["moving_avg", "convlstm", "u_net", "weather_model", "lstm", "traj_gru"]
 for model_n in model_names:

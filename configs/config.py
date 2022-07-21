@@ -16,7 +16,7 @@ experiment_params = {
 data_params = {
     "rebuild": False,
     "dump_data_folder": "train_data",
-    # if rebuild true we extract from nc files inside data_raw
+    # if rebuild true we extract from nc files inside data_raw (only for high res data)
     "weather_raw_dir": 'data/data_raw',
     "spatial_range": [],  # [[30, 45], [20, 50]],
     "weather_freq": 1,
@@ -38,7 +38,9 @@ model_params = {
             "window_out_len": 5,
             "batch_size": 8,
             "shuffle": True,
-            "stride": 1
+            "stride": 1,
+            "temporal_freq": 1,
+            "max_temporal_freq": 1
         },
         "trainer": {
             "num_epochs": 50,
@@ -104,7 +106,9 @@ model_params = {
             "window_out_len": 5,
             "batch_size": 8,
             "shuffle": True,
-            "stride": 1
+            "stride": 1,
+            "temporal_freq": 1,
+            "max_temporal_freq": 1
         },
         "trainer": {
             "num_epochs": 50,
@@ -132,7 +136,9 @@ model_params = {
             "window_out_len": 72,
             "batch_size": 8,
             "shuffle": True,
-            "stride": 1
+            "stride": 1,
+            "temporal_freq": 1,
+            "max_temporal_freq": 1
         },
         "trainer": {
             "num_epochs": 50,
@@ -186,7 +192,9 @@ model_params = {
             "window_out_len": 5,
             "batch_size": 8,
             "shuffle": True,
-            "stride": 1
+            "stride": 1,
+            "temporal_freq": 1,
+            "max_temporal_freq": 1
         },
         "trainer": {
             "num_epochs": 50,
@@ -216,7 +224,9 @@ model_params = {
             "window_out_len": 5,
             "batch_size": 8,
             "shuffle": True,
-            "stride": 1
+            "stride": 1,
+            "temporal_freq": 1,
+            "max_temporal_freq": 1
         },
         "trainer": {
             "num_epochs": 50,
