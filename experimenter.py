@@ -135,10 +135,10 @@ def log_results(scores, trainer, date_range_str):
           f"{all_scores_str}")
 
 
-def get_experiment_elements(model_name, device, exp_num):
+def get_experiment_elements(model_name, device, exp_num, exp_dir="results"):
     if exp_num is None:
         raise KeyError("experiment number cannot be None")
-    model, trainer, batch_generator = _load_checkpoint(model_name, exp_num)
+    model, trainer, batch_generator = _load_checkpoint(model_name, exp_num, exp_dir)
 
     model = model.to(device)
     if model_name in ["convlstm", "weather_model"]:
@@ -154,8 +154,8 @@ def get_experiment_elements(model_name, device, exp_num):
     return trainer, model, batch_generator
 
 
-def get_exp_count(model_name):
-    save_dir = os.path.join('results', model_name)
+def get_exp_count(model_name, result_dir='results'):
+    save_dir = os.path.join(result_dir, model_name)
     num_exp_dir = len(glob.glob(os.path.join(save_dir, 'exp_*')))
     return num_exp_dir
 
@@ -171,14 +171,14 @@ def _saving_checkpoint(save_dir, scores, model, trainer, batch_generator, config
             pkl.dump(obj, file)
 
 
-def _load_checkpoint(model_name, exp_num):
+def _load_checkpoint(model_name, exp_num, exp_dir):
     def load_obj(dir_path, obj_name):
         obj_path = os.path.join(dir_path, f"{obj_name}.pkl")
         with open(obj_path, "rb") as f:
             obj = pkl.load(f)
         return obj
 
-    exps_dir = os.path.join('results', model_name, f"exp_{exp_num}")
+    exps_dir = os.path.join(exp_dir, model_name, f"exp_{exp_num}")
     model = load_obj(exps_dir, "model")
     trainer = load_obj(exps_dir, "trainer")
     batch_generator = load_obj(exps_dir, "batch_generator")

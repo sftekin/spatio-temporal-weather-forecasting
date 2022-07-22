@@ -12,9 +12,9 @@ from data_creator import DataCreator
 from batch_generator import BatchGenerator
 
 
-def inference_on_test(model_name, device, exp_num, test_data_folder,
-                      start_date_str, end_date_str, forecast_horizon, selected_dim):
-    trainer, model, dumped_generator = get_experiment_elements(model_name, device, exp_num)
+def inference_on_test(model_name, device, exp_num, test_data_folder, start_date_str, end_date_str, forecast_horizon,
+                      selected_dim, exp_dir):
+    trainer, model, dumped_generator = get_experiment_elements(model_name, device, exp_num, exp_dir)
 
     start_date = pd.to_datetime(start_date_str)
     end_date = pd.to_datetime(end_date_str) - pd.DateOffset(hours=1)
@@ -47,7 +47,7 @@ def inference_on_test(model_name, device, exp_num, test_data_folder,
                 date_range_str=f"{start_date_str}_{end_date_str}")
 
     # save metrics
-    metric_dir = os.path.join('results', model_name, f"exp_{exp_num}", "test_scores.pkl")
+    metric_dir = os.path.join(exp_dir, model_name, f"exp_{exp_num}", "test_scores.pkl")
     scores = {"ts_metrics": ts_metrics, "all_metrics": all_metrics}
     with open(metric_dir, "wb") as f:
         pkl.dump(scores, f)
@@ -58,6 +58,8 @@ def calc_metric_scores(model, generator, device, selected_dim):
     model.eval()
     running_preds, running_labels, weights = [], [], None
     for idx, (x, y) in enumerate(generator.generate("test")):
+        print('\r\t{}:{}/{}'.format("test", idx, generator.num_iter("test")),
+              flush=True, end='')
         if hasattr(model, 'hidden'):
             hidden = model.init_hidden(batch_size=x.shape[0])
         else:

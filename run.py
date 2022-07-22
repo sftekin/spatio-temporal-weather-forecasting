@@ -8,6 +8,8 @@ def run_weatherbenc(model_name, exp_type):
         from configs.weatherbench.iter_model_confs import model_params
     elif exp_type == "sequential":
         from configs.weatherbench.seq_model_confs import model_params
+    elif exp_type == "direct":
+        from configs.weatherbench.direct_model_confs import model_params
     else:
         raise KeyError("exp_type can only be either 'itereative' or 'sequential'")
 
@@ -22,6 +24,7 @@ def run_weatherbenc(model_name, exp_type):
         "start_date_str": "01-01-2017",
         "end_date_str": "01-01-2018",
         "test_data_folder": "data/weatherbench/test_data",
+        "exp_dir": f"results/{exp_type}_results",
         "exp_num": get_exp_count(model_name),  # get the last experiment
         # "exp_num": 2,  # or set it by yourself
         "forecast_horizon": 3,
