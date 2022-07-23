@@ -10,7 +10,7 @@ experiment_params["val_ratio"] = 0.1
 experiment_params["test_ratio"] = 0.1
 experiment_params["normalize_flag"] = True
 experiment_params["device"] = "cuda"
-experiment_params["model"] = "moving_avg"
+experiment_params["model"] = "weather_model"
 
 # overwrite data parameters
 data_params["rebuild"] = False
@@ -28,9 +28,11 @@ for model_n in model_names:
     model_params[model_n]["batch_gen"]["window_in_len"] = 10
     model_params[model_n]["batch_gen"]["window_out_len"] = 5
     model_params[model_n]["batch_gen"]["batch_size"] = 8
+    model_params[model_n]["batch_gen"]["temporal_freq"] = 1
+    model_params[model_n]["batch_gen"]["max_temporal_freq"] = 1
     model_params[model_n]["trainer"]["num_epochs"] = 50
 
-model_params["weather_model"]["trainer"]["learning_rate"] = Param([0.01, 0.001, 0.0005])
+model_params["weather_model"]["trainer"]["learning_rate"] = Param([0.001, 0.0005])
 model_params["u_net"]["trainer"]["learning_rate"] = Param([0.01, 0.001, 0.0005, 0.00001])
 model_params["convlstm"]["trainer"]["learning_rate"] = Param([0.01, 0.001, 0.0005, 0.00001])
 model_params["moving_avg"]["trainer"]["learning_rate"] = Param([0.01, 0.001, 0.0005, 0.00001])

@@ -4,14 +4,14 @@
 
 plt.close("all")
 plt.clf()
-fig, axs = plt.subplots(9, 10, figsize=(40, 20))
-images = []
-for d in range(9):
-    for t in range(10):
-        images.append(axs[d, t].imshow(x.detach().numpy()[1, t, d, :, :], cmap=plt.get_cmap("Spectral")))
-        axs[d, t].set_title(f"t={t}")
-        axs[d, t].axis("off")
-plt.savefig("figures/x.png", bbox_inches="tight", pad_inches=0.01, dpi=300)
+fig, ax = plt.subplots(9, 10, figsize=(10, 5))
+for t_step in range(self.window_in):
+    for i in range(x.shape[2]):
+        ax[i, t_step].imshow(x.cpu()[2, t_step, i], cmap=plt.get_cmap("Spectral"))
+        ax[i, t_step].set_xticks([])
+        ax[i, t_step].set_yticks([])
+plt.subplots_adjust(wspace=0.01, hspace=0.1)
+plt.savefig("x.png", bbox_inches="tight", pad_inches=0.01, dpi=300)
 
 ## X FLOW
 
@@ -38,23 +38,22 @@ fig.savefig(f"figures/flow.png", bbox_inches="tight", pad_inches=0.1, dpi=300)
 
 ## ALPHAS
 
-fig, axs = plt.subplots(9, 10, figsize=(40, 20))
-images = []
-for d in range(9):
-    for t in range(10):
-        images.append(axs[d, t].imshow(alphas[t].detach().numpy()[1, d, :, :]))
-        axs[d, t].axis("off")
+fig, ax = plt.subplots(alphas[0].shape[1], len(alphas), figsize=(10, 5))
+for t_step in range(len(alphas)):
+    for i in range(alphas[0].shape[1]):
+        ax[i, t_step].imshow(alphas[t_step].cpu()[2, i])
+        ax[i, t_step].set_xticks([])
+        ax[i, t_step].set_yticks([])
 plt.subplots_adjust(wspace=0.01, hspace=0)
-plt.savefig(f"figures/alphas/alphas.png", bbox_inches="tight", pad_inches=0.01, dpi=300)
-
+plt.savefig("alpha.png", bbox_inches="tight", pad_inches=0.01, dpi=300)
 
 ## PRED & LABEL
 
-fig, axs = plt.subplots(2, 10, figsize=(20, 3))
+fig, axs = plt.subplots(2, 5, figsize=(20, 3))
 images = []
-for t in range(10):
-    images.append(axs[0, t].imshow(y.detach().numpy()[0, t, 0, :, :], cmap=plt.get_cmap("Spectral")))
-    axs[1, t].imshow(pred.detach().numpy()[0, t, 0, :, :], cmap=plt.get_cmap("Spectral"))
+for t in range(5):
+    images.append(axs[0, t].imshow(y.detach().cpu().numpy()[2, t, 0, :, :], cmap=plt.get_cmap("Spectral")))
+    axs[1, t].imshow(pred.detach().cpu().numpy()[2, t, 0, :, :], cmap=plt.get_cmap("Spectral"))
     axs[0, t].axis("off")
     axs[1, t].axis("off")
     axs[0, t].set_title(f"t={t}")
@@ -62,8 +61,7 @@ plt.subplots_adjust(wspace=0, hspace=0)
 clb = fig.colorbar(images[0], ax=axs, orientation='vertical', fraction=.02, aspect=10, drawedges=False, pad=0.01)
 clb.ax.tick_params(labelsize=10)
 clb.outline.set_linewidth(0.01)
-plt.savefig("figures/comparision.png", bbox_inches="tight", pad_inches=0.01, dpi=300)
-
+plt.savefig("comparision.png", bbox_inches="tight", pad_inches=0.01, dpi=300)
 
 ## VALIDATION CURVE
 

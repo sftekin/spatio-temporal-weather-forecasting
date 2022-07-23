@@ -13,7 +13,7 @@ from batch_generator import BatchGenerator
 
 
 def inference_on_test(model_name, device, exp_num, test_data_folder, start_date_str, end_date_str, forecast_horizon,
-                      selected_dim, exp_dir):
+                      selected_dim, exp_dir, dataset_type):
     trainer, model, dumped_generator = get_experiment_elements(model_name, device, exp_num, exp_dir)
 
     start_date = pd.to_datetime(start_date_str)
@@ -39,7 +39,7 @@ def inference_on_test(model_name, device, exp_num, test_data_folder, start_date_
               f"({window_out_len}) < forecast_horizon ({forecast_horizon})")
 
     with torch.no_grad():
-        ts_metrics, all_metrics = calc_metric_scores(model, batch_generator, device, selected_dim)
+        ts_metrics, all_metrics = calc_metric_scores(model, batch_generator, device, selected_dim, dataset_type)
 
     # log the results
     log_results(scores={"inference-test": all_metrics},
@@ -53,7 +53,7 @@ def inference_on_test(model_name, device, exp_num, test_data_folder, start_date_
         pkl.dump(scores, f)
 
 
-def calc_metric_scores(model, generator, device, selected_dim):
+def calc_metric_scores(model, generator, device, selected_dim, dataset_type):
     model.to(device)
     model.eval()
     running_preds, running_labels, weights = [], [], None
@@ -92,20 +92,21 @@ def calc_metric_scores(model, generator, device, selected_dim):
     pred_all = torch.cat(running_preds, dim=0)
     target_all = torch.cat(running_labels, dim=0)
 
-    # calculate weights for weighted metrics
-    lats_arr = np.load(os.path.join("resources", "lat_arr.npy"))
-    weights = np.cos(np.deg2rad(lats_arr))
-    weights /= weights[:, 0].mean()
-    weights = np.expand_dims(weights, axis=0)
-
     ts_metrics, all_metrics = _calc_metrics(pred=pred_all, target=target_all)
-    ts_weighted_scores, all_weighted_scores = _calc_weighted_meterics(pred_all.numpy(),
-                                                                      target_all.numpy(), weights)
+    if dataset_type == "weatherbench":
+        # calculate weights for weighted metrics
+        lats_arr = np.load(os.path.join("resources", "lat_arr.npy"))
+        weights = np.cos(np.deg2rad(lats_arr))
+        weights /= weights[:, 0].mean()
+        weights = np.expand_dims(weights, axis=0)
 
-    weighted_metric_names = ["WeightedMAE", "WeightedRMSE", "WeightedACC"]
-    for i, m_name in enumerate(weighted_metric_names):
-        all_metrics[m_name] = all_weighted_scores[i]
-        ts_metrics[m_name] = ts_weighted_scores[:, i]
+        ts_weighted_scores, all_weighted_scores = _calc_weighted_meterics(pred_all.numpy(),
+                                                                          target_all.numpy(), weights)
+
+        weighted_metric_names = ["WeightedMAE", "WeightedRMSE", "WeightedACC"]
+        for i, m_name in enumerate(weighted_metric_names):
+            all_metrics[m_name] = all_weighted_scores[i]
+            ts_metrics[m_name] = ts_weighted_scores[:, i]
 
     return ts_metrics, all_metrics
 

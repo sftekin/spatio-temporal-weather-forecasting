@@ -19,21 +19,22 @@ def run_weatherbenc(model_name, exp_type):
                model_params=model_params)
 
     # perform inference on test
+    exp_dir = f"results/{exp_type}_results"
     inference_params = {
         "model_name": model_name,
         "start_date_str": "01-01-2017",
         "end_date_str": "01-01-2018",
         "test_data_folder": "data/weatherbench/test_data",
-        "exp_dir": f"results/{exp_type}_results",
-        "exp_num": get_exp_count(model_name),  # get the last experiment
+        "exp_dir": exp_dir,
+        "exp_num": get_exp_count(model_name, result_dir=exp_dir),  # get the last experiment
         # "exp_num": 2,  # or set it by yourself
-        "forecast_horizon": 3,
+        "forecast_horizon": 72,
         "selected_dim": -1  # index position of the selected feature
     }
-    inference_on_test(device=experiment_params["device"], **inference_params)
+    inference_on_test(dataset_type="weatherbench", device=experiment_params["device"], **inference_params)
 
 
-def run_highres():
+def run_highres(model_name):
     from configs.higher_res.higher_res_config import experiment_params, data_params, model_params
 
     # perform train test
@@ -41,10 +42,25 @@ def run_highres():
                data_params=data_params,
                model_params=model_params)
 
+    # perform inference on test
+    exp_dir = f"results"
+    inference_params = {
+        "model_name": model_name,
+        "start_date_str": "01-01-2001",
+        "end_date_str": "02-01-2001",
+        "test_data_folder": "data/data_dump",
+        "exp_dir": exp_dir,
+        "exp_num": get_exp_count(model_name, result_dir=exp_dir),  # get the last experiment
+        # "exp_num": 2,  # or set it by yourself
+        "forecast_horizon": 5,
+        "selected_dim": -1  # index position of the selected feature
+    }
+    inference_on_test(dataset_type="highres", device=experiment_params["device"], **inference_params)
+
 
 if __name__ == '__main__':
     # perform experiments on weatherbench
     run_weatherbenc(model_name="weather_model", exp_type="sequential")
 
-    # # perform experiments on highres
-    # run_highres()
+    # perform experiments on highres
+    run_highres(model_name="weather_model")
