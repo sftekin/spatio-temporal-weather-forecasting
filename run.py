@@ -1,81 +1,66 @@
-import os
-import shutil
-import pandas as pd
-
-from config import experiment_params, data_params, model_params
-from data_creator import DataCreator
-from batch_generator import BatchGenerator
-from experiment import predict, train
-from models.weather.weather_model import WeatherModel
-from models.baseline.moving_avg import MovingAvg
-from models.baseline.convlstm import ConvLSTM
-from models.baseline.u_net import UNet
+from experimenter import train_test, get_exp_count
+from inference import inference_on_test
 
 
-def run():
-    global_start_date = experiment_params['global_start_date']
-    global_end_date = experiment_params['global_end_date']
-    stride = experiment_params['data_step']
-    data_length = experiment_params['data_length']
-    val_ratio = experiment_params['val_ratio']
-    test_ratio = experiment_params['test_ratio']
-    normalize_flag = experiment_params['normalize_flag']
-    model_name = experiment_params['model']
-    device = experiment_params['device']
-    model_dispatcher = {
-        'moving_avg': MovingAvg,
-        'convlstm': ConvLSTM,
-        'u_net': UNet,
-        'weather_model': WeatherModel,
+def run_weatherbenc(model_name, exp_type):
+    from configs.weatherbench.default_conf import experiment_params, data_params
+    if exp_type == "iterative":
+        from configs.weatherbench.iter_model_confs import model_params
+    elif exp_type == "sequential":
+        from configs.weatherbench.seq_model_confs import model_params
+    elif exp_type == "direct":
+        from configs.weatherbench.direct_model_confs import model_params
+    else:
+        raise KeyError("exp_type can only be either 'itereative' or 'sequential'")
+
+    # perform train test
+    train_test(experiment_params=experiment_params,
+               data_params=data_params,
+               model_params=model_params)
+
+    # perform inference on test
+    exp_dir = f"results/{exp_type}_results"
+    inference_params = {
+        "model_name": model_name,
+        "start_date_str": "01-01-2017",
+        "end_date_str": "01-01-2018",
+        "test_data_folder": "data/weatherbench/test_data",
+        "exp_dir": exp_dir,
+        "exp_num": get_exp_count(model_name, result_dir=exp_dir),  # get the last experiment
+        # "exp_num": 2,  # or set it by yourself
+        "forecast_horizon": 72,
+        "selected_dim": -1  # index position of the selected feature
     }
+    inference_on_test(dataset_type="weatherbench", device=experiment_params["device"], **inference_params)
 
-    dump_file_dir = os.path.join('data', 'data_dump')
-    months = pd.date_range(start=global_start_date, end=global_end_date, freq=str(1) + 'M')
-    for i in range(0, len(months) - (data_length - stride), stride):
-        start_date_str = '-'.join([str(months[i].year), str(months[i].month), '01'])
-        start_date = pd.to_datetime(start_date_str)
-        end_date = start_date + pd.DateOffset(months=data_length) - pd.DateOffset(hours=1)
-        date_range_str = start_date_str + "_" + end_date.strftime("%Y-%m-%d")
 
-        data_creator = DataCreator(start_date=start_date, end_date=end_date, **data_params)
-        weather_data = data_creator.create_data()
+def run_highres(model_name):
+    from configs.higher_res.higher_res_config import experiment_params, data_params, model_params
 
-        selected_model_params = model_params[model_name]["core"]
-        batch_gen_params = model_params[model_name]["batch_gen"]
-        trainer_params = model_params[model_name]["trainer"]
-        config = {
-            "data_params": data_params,
-            "experiment_params": experiment_params,
-            f"{model_name}_params": model_params[model_name]
-        }
+    # perform train test
+    train_test(experiment_params=experiment_params,
+               data_params=data_params,
+               model_params=model_params)
 
-        batch_generator = BatchGenerator(weather_data=weather_data,
-                                         val_ratio=val_ratio,
-                                         test_ratio=test_ratio,
-                                         params=batch_gen_params,
-                                         normalize_flag=normalize_flag)
-
-        model = model_dispatcher[model_name](device=device, **selected_model_params)
-
-        print(f"Training {model_name} for the {date_range_str}")
-        train(model_name=model_name,
-              model=model,
-              batch_generator=batch_generator,
-              trainer_params=trainer_params,
-              date_r=date_range_str,
-              config=config,
-              device=device)
-
-        print(f"Predicting {model_name} for the {date_range_str}")
-        try:
-            predict(model_name=model_name, batch_generator=batch_generator, device=device, exp_num=1)
-        except Exception as e:
-            print(f"Couldnt perform prediction, the exception is {e}")
-
-        # remove dump directory
-        shutil.rmtree(dump_file_dir)
+    # perform inference on test
+    exp_dir = f"results"
+    inference_params = {
+        "model_name": model_name,
+        "start_date_str": "01-01-2001",
+        "end_date_str": "02-01-2001",
+        "test_data_folder": "data/data_dump",
+        "exp_dir": exp_dir,
+        "exp_num": get_exp_count(model_name, result_dir=exp_dir),  # get the last experiment
+        # "exp_num": 2,  # or set it by yourself
+        "forecast_horizon": 5,
+        "selected_dim": -1  # index position of the selected feature
+    }
+    inference_on_test(dataset_type="highres", device=experiment_params["device"], **inference_params)
 
 
 if __name__ == '__main__':
-    run()
+    # perform experiments on weatherbench
+    run_weatherbenc(model_name="weather_model", exp_type="sequential")
 
+    # perform experiments on highres
+    run_highres(model_name="weather_model")

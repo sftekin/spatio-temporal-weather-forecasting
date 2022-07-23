@@ -97,7 +97,7 @@ class WeatherModel(nn.Module):
         :return: (b, t, m, n, d)
         """
         # forward encoder
-        _, cur_states = self.__forward_encoder(x, hidden)
+        _, cur_states = self.__forward_encoder(x.clone(), hidden)
 
         # reverse the state list
         cur_states = [(torch.sum(cur_states[i - 1][0], dim=1),
@@ -115,16 +115,12 @@ class WeatherModel(nn.Module):
 
         for layer_idx in range(self.num_layers):
             h, c = hidden[layer_idx]
-            h_inner = []
-            c_inner = []
-            alphas = []
+            h_inner, c_inner, alphas = [], [], []
             for t in range(seq_len):
-
                 if layer_idx == 0:
-                    x, alpha = self.__forward_input_attn(x, hidden=(h, c))
+                    x, alpha = self.__forward_input_attn(x, hidden=(h, c), time_step=t)
                     alphas.append(alpha)
-
-                h, c = self.encoder[layer_idx](input_tensor=x[:, t, :, :, :],
+                h, c = self.encoder[layer_idx](input_tensor=x[:, t],
                                                cur_state=[h, c])
                 c_inner.append(c)
                 h_inner.append(h)
@@ -132,7 +128,6 @@ class WeatherModel(nn.Module):
             layer_h = torch.stack(h_inner, dim=1)
             layer_c = torch.stack(c_inner, dim=1)
             x = layer_h
-
             layer_output_list.append(layer_h)
             layer_state_list.append([layer_h, layer_c])
 
@@ -143,10 +138,8 @@ class WeatherModel(nn.Module):
         y_next = y_t
         for t in range(self.window_out):
             for layer_idx in range(self.num_layers):
-                h, c = hidden[layer_idx]
-
                 h, c = self.decoder[layer_idx](input_tensor=y_next,
-                                               cur_state=[h, c])
+                                               cur_state=hidden[layer_idx])
                 y_next = h
                 hidden[layer_idx] = (h, c)
 
@@ -157,7 +150,7 @@ class WeatherModel(nn.Module):
 
         return y_pre
 
-    def __forward_input_attn(self, x, hidden):
+    def __forward_input_attn(self, x, hidden, time_step):
         d_dim = x.shape[2]
 
         # calculate input attention
@@ -165,7 +158,6 @@ class WeatherModel(nn.Module):
         for k in range(d_dim):
             # dim(x_k): (b, t, m, n)
             x_k = x[:, :, k]
-
             # dim(alpha): (b, 1, m, n)
             alpha = self.input_attn(x_k, hidden)
             alpha_list.append(alpha)
@@ -174,7 +166,7 @@ class WeatherModel(nn.Module):
         alpha_tensor = torch.cat(alpha_list, dim=1)
         alpha_tensor = F.softmax(alpha_tensor, dim=1)
 
-        # (b, t, d, m, n ) * (b, 1, d, m, n)
-        x_tilda = x * alpha_tensor.unsqueeze(1)
+        # (b, d, m, n ) * (b, d, m, n)
+        x[:, time_step] *= alpha_tensor
 
-        return x_tilda, alpha_tensor
+        return x, alpha_tensor

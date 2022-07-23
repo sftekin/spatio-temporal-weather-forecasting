@@ -66,7 +66,8 @@ class ConvLSTM(nn.Module):
         _, cur_states = self.__forward_block(x, hidden, 'encoder', return_all_layers=True)
 
         # reverse the state list
-        cur_states = [cur_states[i - 1] for i in range(len(cur_states), 0, -1)]
+        if len(cur_states) > 1:
+            cur_states = [cur_states[i - 1] for i in range(len(cur_states), 0, -1)]
 
         # forward decoder block
         decoder_input = torch.zeros((b, self.window_out,
