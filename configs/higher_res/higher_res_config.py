@@ -1,4 +1,4 @@
-from config_generator import Param
+from configs.config_generator import Param
 from configs.config import experiment_params, data_params, model_params
 
 # overwrite experiment parameters

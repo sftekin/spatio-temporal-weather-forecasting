@@ -1,3 +1,7 @@
+"""
+This script plots the metrics of weatherbench experiments
+"""
+
 import os
 import pickle as pkl
 

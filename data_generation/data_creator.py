@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 
-from transformer.weather_transform import WeatherTransformer
+from data_generation.weather_transform import WeatherTransformer
 
 
 class DataCreator:

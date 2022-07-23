@@ -1,4 +1,4 @@
-from config_generator import Param
+from configs.config_generator import Param
 from configs.config import model_params
 
 # Order of features in the input tensors are:

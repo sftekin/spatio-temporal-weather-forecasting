@@ -22,3 +22,8 @@ $ docker logs -f weather_model
 ## Dataset Link
 
 https://drive.google.com/drive/folders/1Ry1x-Fv6uxtLYfgRBv-MUOLaWjK3wPO6?usp=sharing
+
+download the highres and weatherbench datasets and put it under the data directory. The locations should be:
+
+highres --> data/data_dump
+weatherbench --> data/weatherbench

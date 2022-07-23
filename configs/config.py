@@ -1,4 +1,4 @@
-from config_generator import Param
+from configs.config_generator import Param
 
 experiment_params = {
     "global_start_date": '2015-01-01',

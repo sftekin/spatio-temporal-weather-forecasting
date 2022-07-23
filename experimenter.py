@@ -5,9 +5,9 @@ import pickle as pkl
 
 import pandas as pd
 
-from data_creator import DataCreator
-from batch_generator import BatchGenerator
-from config_generator import ConfigGenerator
+from data_generation.data_creator import DataCreator
+from data_generation.batch_generator import BatchGenerator
+from configs.config_generator import ConfigGenerator
 from trainer import Trainer
 from models.weather.weather_model import WeatherModel
 from models.baseline.moving_avg import MovingAvg

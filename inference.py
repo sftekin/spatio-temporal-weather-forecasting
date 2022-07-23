@@ -8,8 +8,8 @@ from torchmetrics.functional import mean_absolute_percentage_error, \
     mean_absolute_error, mean_squared_error
 
 from experimenter import get_experiment_elements, log_results
-from data_creator import DataCreator
-from batch_generator import BatchGenerator
+from data_generation.data_creator import DataCreator
+from data_generation.batch_generator import BatchGenerator
 
 
 def inference_on_test(model_name, device, exp_num, test_data_folder, start_date_str, end_date_str, forecast_horizon,

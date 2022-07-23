@@ -1,4 +1,4 @@
-from dataset import WeatherDataset
+from data_generation.dataset import WeatherDataset
 from models.adaptive_normalizer import AdaptiveNormalizer
 
 
