@@ -23,7 +23,7 @@ class DataCreator:
         # Data paths
         self.data_dir = os.path.abspath(
             os.path.dirname(os.path.abspath(__file__)))
-        self.data_dir = os.path.join(self.data_dir, 'data')
+        self.data_dir = os.path.join(self.data_dir, "..", 'data')
         self.weather_raw_dir = weather_raw_dir
         self.dump_data_folder = dump_data_folder
 
