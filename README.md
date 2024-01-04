@@ -12,7 +12,7 @@ After downloading the datasets extract them under `data` directory.
 - weatherbench --> data/weatherbench
 
 ## Models
-Download the trained models in [here]().
+Download the trained models in [here](https://drive.google.com/drive/folders/1D2VOIu-u7d9yTWPR0aACrXMtBGGj206d?usp=drive_link).
 Put the models under `results` directory. After the extraction the models should be in this hierarchy.
 - results/
   - results/highres

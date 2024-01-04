@@ -21,7 +21,7 @@ def run_weatherbenc(model_name, exp_type, perform_training=True):
                    exp_type=exp_type)
 
     # perform inference on test
-    exp_dir = f"results/{exp_type}_results"
+    exp_dir = f"results/weatherbench/{exp_type}_results"
     inference_params = {
         "model_name": model_name,
         "start_date_str": "01-01-2017",
@@ -46,7 +46,7 @@ def run_highres(model_name, perform_training=True):
                    model_params=model_params)
 
     # perform inference on test
-    exp_dir = f"results"
+    exp_dir = f"results/highres"
     inference_params = {
         "model_name": model_name,
         "start_date_str": "01-01-2001",
