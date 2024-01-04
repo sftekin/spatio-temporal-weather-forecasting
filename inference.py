@@ -13,7 +13,7 @@ from data_generation.batch_generator import BatchGenerator
 
 
 def inference_on_test(model_name, device, exp_num, test_data_folder, start_date_str, end_date_str, forecast_horizon,
-                      selected_dim, exp_dir, dataset_type):
+                      selected_dim, exp_dir, dataset_type, exp_type):
     trainer, model, dumped_generator = get_experiment_elements(model_name, device, exp_num, exp_dir)
 
     start_date = pd.to_datetime(start_date_str)
@@ -28,7 +28,8 @@ def inference_on_test(model_name, device, exp_num, test_data_folder, start_date_
     window_out_len = dumped_generator.dataset_params["window_out_len"]
     params = dumped_generator.dataset_params
     params["stride"] = forecast_horizon
-    params["window_out_len"] = forecast_horizon
+    if exp_type != "direct":
+        params["window_out_len"] = forecast_horizon
     batch_generator = BatchGenerator(weather_data=path_arr, val_ratio=0.0, test_ratio=1.0,
                                      normalize_flag=normalize_flag, params=params)
 
