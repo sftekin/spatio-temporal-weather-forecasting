@@ -163,7 +163,7 @@ def _calc_metrics(pred, target):
         all_metrics[key] = func(preds=pred, target=target).numpy()
         ts_list = []
         for t in range(pred.shape[1]):
-            ts_list.append(func(preds=pred[:, t], target=target[:, t]).numpy())
+            ts_list.append(func(preds=pred[:, t].contiguous(), target=target[:, t].contiguous()).numpy())
         ts_metrics[key] = ts_list
 
     return ts_metrics, all_metrics

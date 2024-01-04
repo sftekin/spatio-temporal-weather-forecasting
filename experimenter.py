@@ -26,7 +26,7 @@ model_dispatcher = {
 }
 
 
-def train_test(experiment_params, data_params, model_params):
+def train_test(experiment_params, data_params, model_params, exp_type=None):
     global_start_date = experiment_params['global_start_date']
     global_end_date = experiment_params['global_end_date']
     stride = experiment_params['data_step']
@@ -67,7 +67,9 @@ def train_test(experiment_params, data_params, model_params):
         print("-*-" * 10)
         print(f"TRAINING for the {date_range_str}")
         combination_num = 0
-        save_dir = os.path.join('results', model_name, 'exp_' + str(get_exp_count(model_name) + 1))
+        results_dir = f"results/{exp_type}_results"
+        save_dir = os.path.join(results_dir, model_name,
+                                'exp_' + str(get_exp_count(model_name, result_dir=results_dir) + 1))
         best_val_score, best_scores, best_trainer_param, best_core_param, best_model = 1e6, {}, {}, {}, None
         for trainer_param in config_generator.conf_next(input_conf=model_trainer_param):
             for core_param in config_generator.conf_next(input_conf=model_core_param):
@@ -172,6 +174,9 @@ def _saving_checkpoint(save_dir, scores, model, trainer, batch_generator, config
 
 
 def _load_checkpoint(model_name, exp_num, exp_dir):
+    import sys
+    project_dir = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
+    sys.path.append(os.path.join(project_dir, "data_generation"))
     def load_obj(dir_path, obj_name):
         obj_path = os.path.join(dir_path, f"{obj_name}.pkl")
         with open(obj_path, "rb") as f:

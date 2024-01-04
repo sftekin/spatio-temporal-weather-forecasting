@@ -42,13 +42,13 @@ class WeatherModel(nn.Module):
                       kernel_size=output_conv_params['in_kernel'],
                       padding=output_conv_params['in_kernel'] // 2,
                       bias=False),
-            nn.LeakyReLU(inplace=True),
+            nn.LeakyReLU(inplace=False),
             nn.Conv2d(in_channels=output_conv_params['mid_channel'],
                       out_channels=output_conv_params["out_channel"],
                       kernel_size=output_conv_params['out_kernel'],
                       padding=output_conv_params['out_kernel'] // 2,
                       bias=False),
-            nn.LeakyReLU(inplace=True)
+            nn.LeakyReLU(inplace=False)
         )
 
         self.hidden = None
@@ -157,7 +157,7 @@ class WeatherModel(nn.Module):
         alpha_list = []
         for k in range(d_dim):
             # dim(x_k): (b, t, m, n)
-            x_k = x[:, :, k]
+            x_k = x[:, :, k].clone()
             # dim(alpha): (b, 1, m, n)
             alpha = self.input_attn(x_k, hidden)
             alpha_list.append(alpha)

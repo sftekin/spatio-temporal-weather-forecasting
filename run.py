@@ -2,7 +2,7 @@ from experimenter import train_test, get_exp_count
 from inference import inference_on_test
 
 
-def run_weatherbenc(model_name, exp_type):
+def run_weatherbenc(model_name, exp_type, perform_training=True):
     from configs.weatherbench.default_conf import experiment_params, data_params
     if exp_type == "iterative":
         from configs.weatherbench.iter_model_confs import model_params
@@ -14,9 +14,11 @@ def run_weatherbenc(model_name, exp_type):
         raise KeyError("exp_type can only be either 'itereative' or 'sequential'")
 
     # perform train test
-    train_test(experiment_params=experiment_params,
-               data_params=data_params,
-               model_params=model_params)
+    if perform_training:
+        train_test(experiment_params=experiment_params,
+                   data_params=data_params,
+                   model_params=model_params,
+                   exp_type=exp_type)
 
     # perform inference on test
     exp_dir = f"results/{exp_type}_results"
@@ -34,13 +36,14 @@ def run_weatherbenc(model_name, exp_type):
     inference_on_test(dataset_type="weatherbench", device=experiment_params["device"], **inference_params)
 
 
-def run_highres(model_name):
+def run_highres(model_name, perform_training=True):
     from configs.higher_res.higher_res_config import experiment_params, data_params, model_params
 
     # perform train test
-    train_test(experiment_params=experiment_params,
-               data_params=data_params,
-               model_params=model_params)
+    if perform_training:
+        train_test(experiment_params=experiment_params,
+                   data_params=data_params,
+                   model_params=model_params)
 
     # perform inference on test
     exp_dir = f"results"
@@ -58,9 +61,20 @@ def run_highres(model_name):
     inference_on_test(dataset_type="highres", device=experiment_params["device"], **inference_params)
 
 
-if __name__ == '__main__':
-    # perform experiments on weatherbench
-    run_weatherbenc(model_name="weather_model", exp_type="sequential")
+def run(dataset, model_name, exp_type, perform_training):
+    if dataset == "weatherbench":
+        # perform experiments on weatherbench
+        run_weatherbenc(model_name=model_name, exp_type=exp_type, perform_training=perform_training)
+    elif dataset == "highres":
+        # perform experiments on highres
+        run_highres(model_name="weather_model", perform_training=perform_training)
+    else:
+        print("The dataset can only be either 'weatherbench' or 'highres'")
 
-    # perform experiments on highres
-    run_highres(model_name="weather_model")
+
+if __name__ == '__main__':
+    run(dataset="weatherbench",
+        model_name="weather_model",
+        exp_type="direct",
+        perform_training=False)
+

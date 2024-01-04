@@ -6,6 +6,9 @@ from copy import deepcopy
 from torchmetrics.functional import mean_absolute_percentage_error, mean_absolute_error, mean_squared_error
 
 
+torch.autograd.set_detect_anomaly(True)
+
+
 class Trainer:
     def __init__(self, num_epochs, early_stop_tolerance, clip, optimizer,
                  learning_rate, weight_decay, momentum, device, selected_dim=-1):
@@ -164,7 +167,7 @@ class Trainer:
         loss = self.criterion(pred, y)
 
         if model.is_trainable and optimizer is not None:
-            loss.backward()
+            loss.backward(retain_graph=True)
             # `clip_grad_norm` helps prevent the exploding gradient problem in RNNs / LSTMs.
             nn.utils.clip_grad_norm_(model.parameters(), self.clip)
 

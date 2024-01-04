@@ -1,29 +1,55 @@
-# The Weather Model
+# Numerical Weather Forecasting using Convolutional-LSTM with Attention and Context Matcher Mechanisms
 
-A spatio-temporal forecasting model for the Numerical Weather Prediction.
+![alt text](./weather_model.png)
+
+Contains the datasets, models, and results for the paper https://arxiv.org/pdf/2102.00696.pdf 
+
+# Datasets
+Both of the datasets 'High Resolution' and 'WeatherBench' are available in [here](https://drive.google.com/drive/folders/1Ry1x-Fv6uxtLYfgRBv-MUOLaWjK3wPO6?usp=sharing).  
+After downloading the datasets extract them under `data` directory.
+
+- highres --> data/data_dump
+- weatherbench --> data/weatherbench
+
+## Models
+Download the trained models in [here]().
+Put the models under `results` directory. After the extraction the models should be in this hierarchy.
+- results/
+  - results/highres
+    - models ...
+  - results/weatherbench
+    - results/sequential_results/
+      - models ...
+    - results/iterative_results/
+      - models ...
+    - results/direct/
+      - models ...
 
 ## Install & Run
-
+For the installation, install the packages to a python=3.8 environment.
 ```
-$ docker build -t weather:v1 docker/.
-```
-
-```
-$ docker run -dit --name weather_model --gpus all --rm weather:v1 python run.py 
+$ pip install -r requirements.txt
 ```
 
+### Arranging Configs
+- For Higher Resolution dataset the arguments are taken from `configs/higher_res/higher_res_config.py`.
+- For WeatherBench dataset the arguments are taken from `configs/weatherbench/` according to forecast mode:
+    - Sequential: `configs/weatherbench/seq_model_confs.py`
+    - Iterative: `configs/weatherbench/iter_model_confs.py`
+    - Direct: `configs/weatherbench/direct_model_confs.py`
+
+these configuration scripts are overwriting the default parameters that are defined in `config.py` and `config_generator.py`
+
+### Training and Testing
+
+The `run.py` script contains a main function for training and testing as shown in below:
 ```
-$ docker logs -f weather_model
+if __name__ == '__main__':
+    run(dataset="weatherbench",
+        model_name="weather_model",
+        exp_type="sequential",
+        perform_training=True)
 ```
 
-## Paper Link
-[http://arxiv.org/abs/2102.00696](http://arxiv.org/abs/2102.00696)
-
-## Dataset Link
-
-https://drive.google.com/drive/folders/1Ry1x-Fv6uxtLYfgRBv-MUOLaWjK3wPO6?usp=sharing
-
-download the highres and weatherbench datasets and put it under the data directory. The locations should be:
-
-highres --> data/data_dump
-weatherbench --> data/weatherbench
+### Reproducing the Paper's Outputs
+We are also reproducing the outputs of the paper including table and figures in `run.ipynb`.
