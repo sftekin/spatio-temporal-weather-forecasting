@@ -61,7 +61,7 @@ def run_highres(model_name, perform_training=True):
     inference_on_test(dataset_type="highres", device=experiment_params["device"], **inference_params)
 
 
-def run(dataset, model_name, exp_type, perform_training):
+def run(dataset, model_name, perform_training, exp_type=None):
     if dataset == "weatherbench":
         # perform experiments on weatherbench
         run_weatherbenc(model_name=model_name, exp_type=exp_type, perform_training=perform_training)
@@ -73,8 +73,8 @@ def run(dataset, model_name, exp_type, perform_training):
 
 
 if __name__ == '__main__':
-    run(dataset="weatherbench",
+    run(dataset="highres",
         model_name="weather_model",
-        exp_type="direct",
-        perform_training=False)
+        exp_type="",
+        perform_training=True)
 

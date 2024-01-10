@@ -19,7 +19,7 @@ class Trainer:
         self.weight_decay = weight_decay
         self.learning_rate = learning_rate
         self.tolerance = early_stop_tolerance
-        self.device = torch.device(device)
+        self.device = device
         self.criterion = nn.MSELoss()
         self.selected_dim = selected_dim
         self.metric_names = ["MSE", "MAE", "MAPE", "RMSE"]

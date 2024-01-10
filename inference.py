@@ -100,14 +100,16 @@ def calc_metric_scores(model, generator, device, selected_dim, dataset_type):
         weights = np.cos(np.deg2rad(lats_arr))
         weights /= weights[:, 0].mean()
         weights = np.expand_dims(weights, axis=0)
+    else:
+        weights = 1
 
-        ts_weighted_scores, all_weighted_scores = _calc_weighted_meterics(pred_all.numpy(),
-                                                                          target_all.numpy(), weights)
+    ts_weighted_scores, all_weighted_scores = _calc_weighted_meterics(pred_all.numpy(),
+                                                                      target_all.numpy(), weights)
 
-        weighted_metric_names = ["WeightedMAE", "WeightedRMSE", "WeightedACC"]
-        for i, m_name in enumerate(weighted_metric_names):
-            all_metrics[m_name] = all_weighted_scores[i]
-            ts_metrics[m_name] = ts_weighted_scores[:, i]
+    weighted_metric_names = ["WeightedMAE", "WeightedRMSE", "WeightedACC"]
+    for i, m_name in enumerate(weighted_metric_names):
+        all_metrics[m_name] = all_weighted_scores[i]
+        ts_metrics[m_name] = ts_weighted_scores[:, i]
 
     return ts_metrics, all_metrics
 
